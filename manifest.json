@@ -2,8 +2,8 @@
     "name": "Yammbo Tv",
     "short_name": "Yammbo Tv",
     "description": "Yammbo \u2014 streaming platform powered by Stremio",
-    "background_color": "#161523",
-    "theme_color": "#2a2843",
+    "background_color": "#000000",
+    "theme_color": "#dc2626",
     "orientation": "any",
     "display": "standalone",
     "display_override": [
