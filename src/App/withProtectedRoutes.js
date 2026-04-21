@@ -10,7 +10,7 @@ const withProtectedRoutes = (Component) => {
         const previousAuthRef = React.useRef(profile.auth);
         React.useEffect(() => {
             if (previousAuthRef.current !== null && profile.auth === null) {
-                window.location = '#/intro';
+                window.location = '/login';
             }
             previousAuthRef.current = profile.auth;
         }, [profile]);

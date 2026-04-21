@@ -36,7 +36,7 @@ const Placeholder = () => {
                 </div>
             </div>
             <div className={styles['button-container']}>
-                <Button className={styles['button']} href={'#/intro?form=login'}>
+                <Button className={styles['button']} href={'/login'}>
                     {t('LOG_IN')}
                 </Button>
             </div>

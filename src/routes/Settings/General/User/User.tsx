@@ -53,7 +53,7 @@ const User = ({ profile }: Props) => {
                             :
                             <Link
                                 label={`${t('LOG_IN')} / ${t('SIGN_UP')}`}
-                                href={'#/intro'}
+                                href={'/login'}
                                 target={'_self'}
                             />
                     }

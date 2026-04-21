@@ -101,32 +101,32 @@ const General = forwardRef<HTMLDivElement, Props>(({ profile }: Props, ref) => {
             }
             <Link
                 label={t('SETTINGS_SUPPORT')}
-                href={'https://stremio.zendesk.com/hc/en-us'}
+                href={'/help'}
             />
             <Link
                 label={t('SETTINGS_SOURCE_CODE')}
-                href={`https://github.com/stremio/stremio-web/tree/${process.env.COMMIT_HASH}`}
+                href={`https://github.com/yammbocom/Yammbo-Tv-web/tree/${process.env.COMMIT_HASH}`}
             />
             <Link
                 label={t('TERMS_OF_SERVICE')}
-                href={'https://www.stremio.com/tos'}
+                href={'/terms'}
             />
             <Link
                 label={t('PRIVACY_POLICY')}
-                href={'https://www.stremio.com/privacy'}
+                href={'/privacy'}
             />
             {
                 profile?.auth?.user &&
                     <Link
                         label={t('SETTINGS_ACC_DELETE')}
-                        href={'https://stremio.zendesk.com/hc/en-us/articles/360021428911-How-to-delete-my-account'}
+                        href={'/settings/account'}
                     />
             }
             {
                 profile?.auth?.user?.email &&
                     <Link
                         label={t('SETTINGS_CHANGE_PASSWORD')}
-                        href={`https://www.strem.io/reset-password/${profile.auth.user.email}`}
+                        href={'/forgot-password'}
                     />
             }
             <Option className={styles['trakt-container']} icon={'trakt'} label={t('SETTINGS_TRAKT')}>

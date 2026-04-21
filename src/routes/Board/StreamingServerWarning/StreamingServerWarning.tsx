@@ -52,6 +52,9 @@ const StreamingServerWarning = ({ className }: Props) => {
         updateSettings(createDismissalDate(0, 50));
     }, [updateSettings]);
 
+    // Yammbo Tv: local streaming server is optional; warning suppressed.
+    return null;
+    // eslint-disable-next-line no-unreachable
     return (
         <div className={classnames(className, styles['warning-container'])}>
             <div className={styles['warning-statement']}>

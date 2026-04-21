@@ -18,12 +18,9 @@ const PlatformProvider = ({ children }: Props) => {
     const openExternal = (url: string) => {
         try {
             const { hostname } = new URL(url);
-            const isWhitelisted = WHITELISTED_HOSTS.some((host: string) =>
-                hostname === host || hostname.endsWith('.' + host)
-            );
-            const finalUrl = !isWhitelisted ? `https://www.stremio.com/warning#${encodeURIComponent(url)}` : url;
-
-            window.open(finalUrl, '_blank');
+            // isWhitelisted check dropped — Yammbo Tv opens external URLs directly
+            void hostname;
+            window.open(url, '_blank');
         } catch (e) {
             console.error('Failed to parse external url:', e);
         }

@@ -20,6 +20,9 @@ const SIGNUP_FORM = 'signup';
 const LOGIN_FORM = 'login';
 
 const Intro = ({ queryParams }) => {
+    // Yammbo Tv: intro is owned by Wave; redirect out of the SPA.
+    React.useEffect(() => { window.location = '/login'; }, []);
+
     const { core } = useServices();
     const { t } = useTranslation();
     const routeFocused = useRouteFocused();
@@ -341,7 +344,7 @@ const Intro = ({ queryParams }) => {
                                     ref={termsRef}
                                     label={t('READ_AND_AGREE')}
                                     link={t('TOS')}
-                                    href={'https://www.stremio.com/tos'}
+                                    href={'/terms'}
                                     checked={state.termsAccepted}
                                     onChange={toggleTermsAccepted}
                                 />
@@ -349,7 +352,7 @@ const Intro = ({ queryParams }) => {
                                     ref={privacyPolicyRef}
                                     label={t('READ_AND_AGREE')}
                                     link={t('PRIVACY_POLICY')}
-                                    href={'https://www.stremio.com/privacy'}
+                                    href={'/privacy'}
                                     checked={state.privacyPolicyAccepted}
                                     onChange={togglePrivacyPolicyAccepted}
                                 />

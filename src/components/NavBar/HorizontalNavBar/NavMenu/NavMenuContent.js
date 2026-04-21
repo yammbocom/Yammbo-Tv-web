@@ -64,7 +64,7 @@ const NavMenuContent = ({ onClick }) => {
                     <div className={styles['email-container']}>
                         <div className={styles['email-label']}>{profile.auth === null ? t('ANONYMOUS_USER') : profile.auth.user.email}</div>
                     </div>
-                    <Button className={styles['logout-button-container']} title={profile.auth === null ? `${t('LOG_IN')} / ${t('SIGN_UP')}` : t('LOG_OUT')} href={profile.auth === null ? '#/intro' : null} onClick={profile.auth !== null ? logoutButtonOnClick : null}>
+                    <Button className={styles['logout-button-container']} title={profile.auth === null ? `${t('LOG_IN')} / ${t('SIGN_UP')}` : t('LOG_OUT')} href={profile.auth === null ? '/login' : '/logout'} onClick={null}>
                         <div className={styles['logout-label']}>{profile.auth === null ? `${t('LOG_IN')} / ${t('SIGN_UP')}` : t('LOG_OUT')}</div>
                     </Button>
                 </div>
@@ -93,21 +93,21 @@ const NavMenuContent = ({ onClick }) => {
                     <Icon className={styles['icon']} name={'magnet-link'} />
                     <div className={styles['nav-menu-option-label']}>{ t('PLAY_URL_MAGNET_LINK') }</div>
                 </Button>
-                <Button className={styles['nav-menu-option-container']} title={ t('HELP_FEEDBACK') } href={'https://stremio.zendesk.com/'} target={'_blank'}>
+                <Button className={styles['nav-menu-option-container']} title={ t('HELP_FEEDBACK') } href={'/help'} target={'_blank'}>
                     <Icon className={styles['icon']} name={'help'} />
                     <div className={styles['nav-menu-option-label']}>{ t('HELP_FEEDBACK') }</div>
                 </Button>
             </div>
             <div className={styles['nav-menu-section']}>
-                <Button className={styles['nav-menu-option-container']} title={ t('TERMS_OF_SERVICE') } href={'https://www.stremio.com/tos'} target={'_blank'}>
+                <Button className={styles['nav-menu-option-container']} title={ t('TERMS_OF_SERVICE') } href={'/terms'} target={'_blank'}>
                     <div className={styles['nav-menu-option-label']}>{ t('TERMS_OF_SERVICE') }</div>
                 </Button>
-                <Button className={styles['nav-menu-option-container']} title={ t('PRIVACY_POLICY') } href={'https://www.stremio.com/privacy'} target={'_blank'}>
+                <Button className={styles['nav-menu-option-container']} title={ t('PRIVACY_POLICY') } href={'/privacy'} target={'_blank'}>
                     <div className={styles['nav-menu-option-label']}>{ t('PRIVACY_POLICY') }</div>
                 </Button>
                 {
                     profile.auth !== null ?
-                        <Button className={styles['nav-menu-option-container']} title={ t('USER_PANEL') } href={'https://www.stremio.com/acc-settings'} target={'_blank'}>
+                        <Button className={styles['nav-menu-option-container']} title={ t('USER_PANEL') } href={'/settings'} target={'_blank'}>
                             <div className={styles['nav-menu-option-label']}>{ t('USER_PANEL') }</div>
                         </Button>
                         :
