@@ -1,5 +1,3 @@
-// Copyright (C) 2017-2024 Smart code 203358507
-
-import Calendar from './Calendar';
-
-export default Calendar;
+// Yammbo TV: route swapped to YamboCalendar (independent of Stremio Cloud)
+const YamboCalendar = require('./YamboCalendar');
+export default YamboCalendar;

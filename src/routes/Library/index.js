@@ -1,5 +1,3 @@
-// Copyright (C) 2017-2023 Smart code 203358507
-
-const Library = require('./Library');
-
-module.exports = Library;
+// Yammbo TV: route swapped to YamboLibrary (independent of Stremio Cloud)
+const YamboLibrary = require('./YamboLibrary');
+module.exports = YamboLibrary;
