@@ -21,11 +21,26 @@ const getYamboUser = () => {
     return window.YAMBO_USER || null;
 };
 
+const YAMBO_PREMIUM_LABELS = {
+    en: { upgrade: 'Go Premium', active: 'Premium active', title_upgrade: 'Unlock all streams', title_active: 'Manage subscription' },
+    es: { upgrade: 'Hazte Premium', active: 'Premium activo', title_upgrade: 'Desbloquea todos los streams', title_active: 'Gestionar suscripción' },
+    pt: { upgrade: 'Seja Premium', active: 'Premium ativo', title_upgrade: 'Desbloqueie todos os streams', title_active: 'Gerenciar assinatura' },
+    fr: { upgrade: 'Passer Premium', active: 'Premium actif', title_upgrade: 'Débloquez tous les streams', title_active: 'Gérer l\'abonnement' },
+};
+
+const useYamboPremiumLabels = (i18n) => {
+    const raw = (i18n && i18n.language) ? i18n.language : 'en';
+    const short = String(raw).split('-')[0].toLowerCase();
+    return YAMBO_PREMIUM_LABELS[short] || YAMBO_PREMIUM_LABELS.en;
+};
+
 const NavMenuContent = ({ onClick }) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { core } = useServices();
     const profile = useProfile();
     const yamboUser = getYamboUser();
+    const yamboPremium = !!(yamboUser && yamboUser.subscription_active);
+    const yamboL = useYamboPremiumLabels(i18n);
     const streamingServer = useStreamingServer();
     const { createTorrentFromMagnet } = useTorrent();
     const [fullscreen, requestFullscreen, exitFullscreen] = useFullscreen();
@@ -82,6 +97,24 @@ const NavMenuContent = ({ onClick }) => {
                         <Button className={styles['nav-menu-option-container']} title={fullscreen ? t('EXIT_FULLSCREEN') : t('ENTER_FULLSCREEN')} onClick={fullscreen ? exitFullscreen : requestFullscreen}>
                             <Icon className={styles['icon']} name={fullscreen ? 'minimize' : 'maximize'} />
                             <div className={styles['nav-menu-option-label']}>{fullscreen ? t('EXIT_FULLSCREEN') : t('ENTER_FULLSCREEN')}</div>
+                        </Button>
+                    </div>
+                    :
+                    null
+            }
+            {
+                yamboUser ?
+                    <div className={styles['nav-menu-section']}>
+                        <Button
+                            className={styles['nav-menu-option-container']}
+                            title={yamboPremium ? yamboL.title_active : yamboL.title_upgrade}
+                            href={'/app-tv/subscription'}
+                            target={'_self'}
+                            style={yamboPremium ? null : { background: '#E50914', color: '#fff' }}>
+                            <Icon className={styles['icon']} name={yamboPremium ? 'checkmark' : 'star'} />
+                            <div className={styles['nav-menu-option-label']}>
+                                {yamboPremium ? yamboL.active : yamboL.upgrade}
+                            </div>
                         </Button>
                     </div>
                     :

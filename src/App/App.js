@@ -19,6 +19,62 @@ const styles = require('./styles');
 
 const RouterWithProtectedRoutes = withCoreSuspender(withProtectedRoutes(Router));
 
+// Yammbo TV: política de addons según suscripción.
+// - Siempre uninstall: YouTube, Public Domain Movies (no son necesarios en nuestro producto)
+// - Premium: uninstall WatchHub (oculta proveedores de compra/alquiler) + install AIOStreams
+// - Free: mantener WatchHub; NO install AIOStreams
+const YAMBO_AIOSTREAMS_URL = 'https://aiostreams.fortheweak.cloud/stremio/fd8676f2-b99a-40cd-ae92-1c51e754d157/eyJpIjoiT2xoaFdJcUFVYW83YnJZTFkzRzVwdz09IiwiZSI6IlQrZDFhTjM3Q1d1TndWTTZDeXphQTNTNHNiZ2ZnUjJ2U2tVMjlQSlV0ZzA9IiwidCI6ImEifQ/manifest.json';
+const YAMBO_AIOSTREAMS_ID = 'aiostreams.viren070.com.fd8676f2-b99';
+const YAMBO_REMOVE_ALWAYS_IDS = ['com.linvo.stremiochannels', 'org.stremio.pubdomainmovies'];
+const YAMBO_REMOVE_PREMIUM_IDS = ['org.stremio.watchhub'];
+
+let yamboAioInstalling = false;
+
+function yamboGetSubscriptionActive() {
+    try {
+        const yu = (typeof window !== 'undefined') ? window.YAMBO_USER : null;
+        return !!(yu && yu.subscription_active);
+    } catch (e) { return false; }
+}
+
+function yamboApplyAddonPolicy(core, addons) {
+    if (!core || !core.transport || !Array.isArray(addons)) return;
+    const premium = yamboGetSubscriptionActive();
+    const toRemoveIds = premium
+        ? YAMBO_REMOVE_ALWAYS_IDS.concat(YAMBO_REMOVE_PREMIUM_IDS)
+        : YAMBO_REMOVE_ALWAYS_IDS.slice();
+
+    addons.forEach((addon) => {
+        const id = addon && addon.manifest && addon.manifest.id;
+        if (id && toRemoveIds.indexOf(id) !== -1) {
+            core.transport.dispatch({ action: 'Ctx', args: { action: 'UninstallAddon', args: addon } });
+        }
+    });
+
+    const hasAio = addons.some((a) => a && a.manifest && a.manifest.id === YAMBO_AIOSTREAMS_ID);
+    if (premium && !hasAio && !yamboAioInstalling) {
+        yamboAioInstalling = true;
+        fetch(YAMBO_AIOSTREAMS_URL, { credentials: 'omit' })
+            .then((r) => r.ok ? r.json() : null)
+            .then((manifest) => {
+                if (!manifest) { yamboAioInstalling = false; return; }
+                const descriptor = {
+                    manifest: manifest,
+                    transportUrl: YAMBO_AIOSTREAMS_URL,
+                    flags: { official: false, protected: false }
+                };
+                core.transport.dispatch({ action: 'Ctx', args: { action: 'InstallAddon', args: descriptor } });
+                setTimeout(() => { yamboAioInstalling = false; }, 5000);
+            })
+            .catch(() => { yamboAioInstalling = false; });
+    } else if (!premium && hasAio) {
+        const aio = addons.find((a) => a && a.manifest && a.manifest.id === YAMBO_AIOSTREAMS_ID);
+        if (aio) {
+            core.transport.dispatch({ action: 'Ctx', args: { action: 'UninstallAddon', args: aio } });
+        }
+    }
+}
+
 const App = () => {
     const { i18n } = useTranslation();
     const shell = useShell();
@@ -157,6 +213,11 @@ const App = () => {
             if (state?.profile?.settings?.quitOnClose && shell.windowClosed) {
                 shell.send('quit');
             }
+
+            // Yammbo TV: curación de addons según estado de suscripción
+            try {
+                yamboApplyAddonPolicy(services.core, state && state.profile ? state.profile.addons : null);
+            } catch (e) { /* best-effort */ }
 
             // Yammbo TV: sync one-time de interfaceLanguage + subtitlesLanguage
             // + audioLanguage desde el locale del usuario (window.YAMBO_USER.locale)

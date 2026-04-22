@@ -14,8 +14,16 @@ const { default: SeasonEpisodePicker } = require('../EpisodePicker');
 
 const ALL_ADDONS_KEY = 'ALL';
 
+// Yammbo TV: textos del CTA "Hazte Premium" para stream vacío
+const YAMBO_STREAM_CTA = {
+    en: { title: 'Unlock streams with Premium', subtitle: 'Your subscription gives you instant access to community addons.', button: 'Go Premium', active: 'Premium active', not_found: 'No streams found yet — try again in a moment.' },
+    es: { title: 'Desbloquea los streams con Premium', subtitle: 'Con tu suscripción tendrás acceso instantáneo a los addons de la comunidad.', button: 'Hazte Premium', active: 'Premium activo', not_found: 'Aún no encontramos streams — inténtalo en un momento.' },
+    pt: { title: 'Desbloqueie os streams com Premium', subtitle: 'Sua assinatura dá acesso instantâneo aos addons da comunidade.', button: 'Seja Premium', active: 'Premium ativo', not_found: 'Ainda não encontramos streams — tente novamente em instantes.' },
+    fr: { title: 'Débloquez les streams avec Premium', subtitle: 'Votre abonnement donne accès aux addons de la communauté.', button: 'Passer Premium', active: 'Premium actif', not_found: 'Aucun stream pour le moment — réessayez dans un instant.' },
+};
+
 const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { core } = useServices();
     const platform = usePlatform();
     const profile = useProfile();
@@ -25,6 +33,14 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
         streamsContainerRef.current.scrollTo({ top: 0, left: 0, behavior: platform.name === 'ios' ? 'smooth' : 'instant' });
         setSelectedAddon(value);
     }, [platform]);
+    // Yammbo TV: reemplazamos el CTA "Install addons" por "Hazte Premium" cuando no
+    // hay suscripción. Los usuarios premium tienen el addon AIOStreams auto-instalado.
+    const yamboPremium = !!((typeof window !== 'undefined') && window.YAMBO_USER && window.YAMBO_USER.subscription_active);
+    const yamboLocaleShort = (() => {
+        const raw = (i18n && i18n.language) ? i18n.language : 'en';
+        return String(raw).split('-')[0].toLowerCase();
+    })();
+    const yamboL = YAMBO_STREAM_CTA[yamboLocaleShort] || YAMBO_STREAM_CTA.en;
     const showInstallAddonsButton = React.useMemo(() => {
         return !profile || profile.auth === null || profile.auth?.user?.isNewUser === true && !video?.upcoming;
     }, [profile, video]);
@@ -151,13 +167,17 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                             <Image className={styles['image']} src={require('/assets/images/empty.png')} alt={' '} />
                             <div className={styles['label']}>{t('NO_STREAM')}</div>
                             {
-                                showInstallAddonsButton ?
-                                    <Button className={styles['install-button-container']} title={t('ADDON_CATALOGUE_MORE')} href={'#/addons'}>
-                                        <Icon className={styles['icon']} name={'addons'} />
-                                        <div className={styles['label']}>{t('ADDON_CATALOGUE_MORE')}</div>
-                                    </Button>
+                                !yamboPremium ?
+                                    <div style={yamboCtaStyles.wrap}>
+                                        <div style={yamboCtaStyles.title}>{yamboL.title}</div>
+                                        <div style={yamboCtaStyles.subtitle}>{yamboL.subtitle}</div>
+                                        <a href={'/app-tv/subscription'} style={yamboCtaStyles.button}>{yamboL.button}</a>
+                                    </div>
                                     :
-                                    null
+                                    <div style={yamboCtaStyles.wrapQuiet}>
+                                        <div style={yamboCtaStyles.activePill}>★ {yamboL.active}</div>
+                                        <div style={yamboCtaStyles.quietLine}>{yamboL.not_found}</div>
+                                    </div>
                             }
                         </div>
                         :
@@ -216,6 +236,16 @@ StreamsList.propTypes = {
     video: PropTypes.object,
     type: PropTypes.string,
     onEpisodeSearch: PropTypes.func
+};
+
+const yamboCtaStyles = {
+    wrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '24px 20px', background: 'linear-gradient(135deg,#1a0808,#0a0a0a)', border: '1px solid rgba(229,9,20,0.35)', borderRadius: 12, margin: '16px 0', textAlign: 'center' },
+    wrapQuiet: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '14px', textAlign: 'center' },
+    title: { fontSize: 17, fontWeight: 700, color: '#fff' },
+    subtitle: { fontSize: 13, color: '#bdbdbd', maxWidth: 340, lineHeight: 1.45 },
+    button: { background: '#E50914', color: '#fff', padding: '10px 22px', borderRadius: 999, fontSize: 14, fontWeight: 700, textDecoration: 'none', marginTop: 4 },
+    activePill: { background: 'rgba(229,9,20,0.15)', color: '#E50914', padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700 },
+    quietLine: { color: '#888', fontSize: 13 },
 };
 
 module.exports = StreamsList;
