@@ -6,7 +6,8 @@ const { useTranslation } = require('react-i18next');
 const { Router } = require('stremio-router');
 const { Core, Shell, Chromecast, DragAndDrop, KeyboardShortcuts, ServicesProvider } = require('stremio/services');
 const { NotFound } = require('stremio/routes');
-const { FileDropProvider, PlatformProvider, ToastProvider, TooltipProvider, ShortcutsProvider, CONSTANTS, withCoreSuspender, useShell, useBinaryState } = require('stremio/common');
+const { FileDropProvider, PlatformProvider, ToastProvider, TooltipProvider, ShortcutsProvider, CONSTANTS, withCoreSuspender, useShell, useBinaryState, useYamboUser } = require('stremio/common');
+const { ensureWhoami } = require('stremio/common/useYamboUser');
 const ServicesToaster = require('./ServicesToaster');
 const DeepLinkHandler = require('./DeepLinkHandler');
 const SearchParamsHandler = require('./SearchParamsHandler');
@@ -37,9 +38,9 @@ function yamboGetSubscriptionActive() {
     } catch (e) { return false; }
 }
 
-function yamboApplyAddonPolicy(core, addons) {
+function yamboApplyAddonPolicy(core, addons, premiumOverride) {
     if (!core || !core.transport || !Array.isArray(addons)) return;
-    const premium = yamboGetSubscriptionActive();
+    const premium = typeof premiumOverride === 'boolean' ? premiumOverride : yamboGetSubscriptionActive();
     const toRemoveIds = premium
         ? YAMBO_REMOVE_ALWAYS_IDS.concat(YAMBO_REMOVE_PREMIUM_IDS)
         : YAMBO_REMOVE_ALWAYS_IDS.slice();
@@ -96,6 +97,21 @@ const App = () => {
     }, []);
     const [initialized, setInitialized] = React.useState(false);
     const [shortcutModalOpen,, closeShortcutsModal, toggleShortcutModal] = useBinaryState(false);
+    const yamboUser = useYamboUser();
+
+    // Yammbo TV: re-aplica política de addons cuando cambia el estado de suscripción
+    // (ej. whoami resuelve DESPUÉS del primer onCtxState y revela premium=true).
+    React.useEffect(() => {
+        if (!initialized || !services.core.active) return;
+        const premium = !!(yamboUser && yamboUser.subscription_active);
+        services.core.transport.getState('ctx')
+            .then((state) => {
+                if (state && state.profile && Array.isArray(state.profile.addons)) {
+                    yamboApplyAddonPolicy(services.core, state.profile.addons, premium);
+                }
+            })
+            .catch(() => {});
+    }, [initialized, yamboUser && yamboUser.subscription_active]);
 
     const onShortcut = React.useCallback((name) => {
         if (name === 'shortcuts') {

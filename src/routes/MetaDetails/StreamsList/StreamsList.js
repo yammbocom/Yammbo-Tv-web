@@ -9,7 +9,7 @@ const { Button, Image, MultiselectMenu } = require('stremio/components');
 const { useServices } = require('stremio/services');
 const Stream = require('./Stream');
 const styles = require('./styles');
-const { usePlatform, useProfile } = require('stremio/common');
+const { usePlatform, useProfile, useYamboUser } = require('stremio/common');
 const { default: SeasonEpisodePicker } = require('../EpisodePicker');
 
 const ALL_ADDONS_KEY = 'ALL';
@@ -35,7 +35,8 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
     }, [platform]);
     // Yammbo TV: reemplazamos el CTA "Install addons" por "Hazte Premium" cuando no
     // hay suscripción. Los usuarios premium tienen el addon AIOStreams auto-instalado.
-    const yamboPremium = !!((typeof window !== 'undefined') && window.YAMBO_USER && window.YAMBO_USER.subscription_active);
+    const yamboUser = useYamboUser();
+    const yamboPremium = !!(yamboUser && yamboUser.subscription_active);
     const yamboLocaleShort = (() => {
         const raw = (i18n && i18n.language) ? i18n.language : 'en';
         return String(raw).split('-')[0].toLowerCase();

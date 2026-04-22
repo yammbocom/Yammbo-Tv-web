@@ -13,13 +13,8 @@ const usePWA = require('stremio/common/usePWA');
 const useTorrent = require('stremio/common/useTorrent');
 const { withCoreSuspender } = require('stremio/common/CoreSuspender');
 const useStreamingServer = require('stremio/common/useStreamingServer');
+const useYamboUser = require('stremio/common/useYamboUser');
 const styles = require('./styles');
-
-// Yammbo TV: detecta usuario autenticado en Laravel/Wave (inyectado via window.YAMBO_USER).
-const getYamboUser = () => {
-    if (typeof window === 'undefined') return null;
-    return window.YAMBO_USER || null;
-};
 
 const YAMBO_PREMIUM_LABELS = {
     en: { upgrade: 'Go Premium', active: 'Premium active', title_upgrade: 'Unlock all streams', title_active: 'Manage subscription' },
@@ -38,7 +33,7 @@ const NavMenuContent = ({ onClick }) => {
     const { t, i18n } = useTranslation();
     const { core } = useServices();
     const profile = useProfile();
-    const yamboUser = getYamboUser();
+    const yamboUser = useYamboUser();
     const yamboPremium = !!(yamboUser && yamboUser.subscription_active);
     const yamboL = useYamboPremiumLabels(i18n);
     const streamingServer = useStreamingServer();
@@ -109,9 +104,10 @@ const NavMenuContent = ({ onClick }) => {
                             className={styles['nav-menu-option-container']}
                             title={yamboPremium ? yamboL.title_active : yamboL.title_upgrade}
                             href={'/pricing'}
-                            target={'_self'}
-                            style={yamboPremium ? null : { background: '#E50914', color: '#fff' }}>
-                            <Icon className={styles['icon']} name={yamboPremium ? 'checkmark' : 'star'} />
+                            target={'_self'}>
+                            <span style={{ color: '#E50914', display: 'inline-flex', alignItems: 'center' }}>
+                                <Icon className={styles['icon']} name={yamboPremium ? 'checkmark' : 'star'} />
+                            </span>
                             <div className={styles['nav-menu-option-label']}>
                                 {yamboPremium ? yamboL.active : yamboL.upgrade}
                             </div>

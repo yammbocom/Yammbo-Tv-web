@@ -17,6 +17,12 @@ const i18n = require('i18next');
 const { initReactI18next } = require('react-i18next');
 const stremioTranslations = require('stremio-translations');
 const App = require('./App');
+const { ensureWhoami } = require('stremio/common/useYamboUser');
+
+// Yammbo TV: dispara /api/app-tv/whoami ASAP para que el estado de suscripción
+// esté disponible antes del primer render del NavMenu/StreamsList. Si window.YAMBO_USER
+// ya tiene subscription_active (ruta /app inyectó el script), ensureWhoami es no-op.
+ensureWhoami();
 
 const translations = Object.fromEntries(Object.entries(stremioTranslations()).map(([key, value]) => [key, {
     translation: value
