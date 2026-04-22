@@ -3,7 +3,6 @@
 
 const React = require('react');
 const { useTranslation } = require('react-i18next');
-const classnames = require('classnames');
 const { MainNavBars, Image } = require('stremio/components');
 
 const T = {
@@ -27,26 +26,58 @@ const T = {
         series: 'Series',
         all: 'Todo',
     },
+    pt: {
+        title: 'Sua Biblioteca',
+        empty_title: 'Sua biblioteca está vazia',
+        empty_body: 'Explore o catálogo e adicione títulos para vê-los aqui.',
+        remove: 'Remover',
+        loading: 'Carregando…',
+        movies: 'Filmes',
+        series: 'Séries',
+        all: 'Tudo',
+    },
+    fr: {
+        title: 'Votre bibliothèque',
+        empty_title: 'Votre bibliothèque est vide',
+        empty_body: 'Parcourez le catalogue et ajoutez des titres pour les voir ici.',
+        remove: 'Supprimer',
+        loading: 'Chargement…',
+        movies: 'Films',
+        series: 'Séries',
+        all: 'Tout',
+    },
 };
 
-const getLocale = () => {
-    try {
-        var loc = (window.YAMBO_USER && window.YAMBO_USER.locale) ||
-            (navigator.language || 'en').slice(0, 2);
-        return T[loc] ? loc : 'en';
-    } catch (e) { return 'en'; }
+const useYamboLocale = () => {
+    const { i18n } = useTranslation();
+    const raw = (i18n && i18n.language) ? i18n.language
+        : ((typeof window !== 'undefined' && window.YAMBO_USER && window.YAMBO_USER.locale) || 'en');
+    const short = String(raw).split('-')[0].toLowerCase();
+    return T[short] ? short : 'en';
+};
+
+const useIsMobile = () => {
+    const [mobile, setMobile] = React.useState(
+        typeof window !== 'undefined' ? window.innerWidth <= 640 : false
+    );
+    React.useEffect(() => {
+        const onResize = () => setMobile(window.innerWidth <= 640);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+    return mobile;
 };
 
 const YamboLibrary = () => {
-    const { t } = useTranslation();
-    const locale = getLocale();
+    const locale = useYamboLocale();
     const tr = T[locale];
+    const mobile = useIsMobile();
 
     const [items, setItems] = React.useState([]);
     const [loading, setLoading] = React.useState(true);
     const [filter, setFilter] = React.useState('all');
     const [userId, setUserId] = React.useState(
-        (window.YAMBO_USER && window.YAMBO_USER.id) || 0
+        (typeof window !== 'undefined' && window.YAMBO_USER && window.YAMBO_USER.id) || 0
     );
 
     // Fallback: if window.YAMBO_USER wasn't injected (stale SW), fetch from backend
@@ -91,77 +122,76 @@ const YamboLibrary = () => {
         }).then(fetchLibrary);
     }, [userId, fetchLibrary]);
 
+    const s = mobile ? stylesMobile : stylesDesktop;
+
     return (
         <MainNavBars route={'library'}>
-            <div style={styles.container}>
-                <div style={styles.header}>
-                    <h1 style={styles.title}>{tr.title}</h1>
-                    <div style={styles.filters}>
-                        {['all', 'movie', 'series'].map(function (f) {
-                            const label = f === 'all' ? tr.all : (f === 'movie' ? tr.movies : tr.series);
-                            return (
-                                <button
-                                    key={f}
-                                    onClick={function () { setFilter(f); }}
-                                    style={Object.assign({}, styles.filterBtn, filter === f ? styles.filterBtnActive : {})}>
-                                    {label}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {loading ? (
-                    <div style={styles.empty}>{tr.loading}</div>
-                ) : items.length === 0 ? (
-                    <div style={styles.empty}>
-                        <h2 style={styles.emptyTitle}>{tr.empty_title}</h2>
-                        <p style={styles.emptyBody}>{tr.empty_body}</p>
-                    </div>
-                ) : (
-                    <div style={styles.grid}>
-                        {items.map(function (item) {
-                            return (
-                                <div key={item.id} style={styles.card}>
-                                    <a
-                                        href={'#/metadetails/' + item.meta_type + '/' + encodeURIComponent(item.meta_id)}
-                                        style={styles.poster}
-                                        title={item.name}>
-                                        {item.poster ? (
-                                            <img src={item.poster} alt={item.name} style={styles.posterImg} />
-                                        ) : (
-                                            <div style={styles.posterPlaceholder}>{item.name.slice(0, 2).toUpperCase()}</div>
-                                        )}
-                                        {item.rating != null && (
-                                            <div style={styles.rating}>★ {Number(item.rating).toFixed(1)}</div>
-                                        )}
-                                    </a>
-                                    <div style={styles.info}>
-                                        <div style={styles.name}>{item.name}</div>
-                                        {item.year && <div style={styles.year}>{item.year}</div>}
-                                    </div>
+            <div style={s.scroll}>
+                <div style={s.container}>
+                    <div style={s.header}>
+                        <h1 style={s.title}>{tr.title}</h1>
+                        <div style={s.filters}>
+                            {['all', 'movie', 'series'].map(function (f) {
+                                const label = f === 'all' ? tr.all : (f === 'movie' ? tr.movies : tr.series);
+                                return (
                                     <button
-                                        onClick={function () { remove(item); }}
-                                        title={tr.remove}
-                                        style={styles.removeBtn}>✕</button>
-                                </div>
-                            );
-                        })}
+                                        key={f}
+                                        onClick={function () { setFilter(f); }}
+                                        style={Object.assign({}, s.filterBtn, filter === f ? s.filterBtnActive : {})}>
+                                        {label}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
-                )}
+
+                    {loading ? (
+                        <div style={s.empty}>{tr.loading}</div>
+                    ) : items.length === 0 ? (
+                        <div style={s.empty}>
+                            <h2 style={s.emptyTitle}>{tr.empty_title}</h2>
+                            <p style={s.emptyBody}>{tr.empty_body}</p>
+                        </div>
+                    ) : (
+                        <div style={s.grid}>
+                            {items.map(function (item) {
+                                return (
+                                    <div key={item.id} style={s.card}>
+                                        <a
+                                            href={'#/metadetails/' + item.meta_type + '/' + encodeURIComponent(item.meta_id)}
+                                            style={s.poster}
+                                            title={item.name}>
+                                            {item.poster ? (
+                                                <img src={item.poster} alt={item.name} style={s.posterImg} />
+                                            ) : (
+                                                <div style={s.posterPlaceholder}>{item.name.slice(0, 2).toUpperCase()}</div>
+                                            )}
+                                            {item.rating != null && (
+                                                <div style={s.rating}>★ {Number(item.rating).toFixed(1)}</div>
+                                            )}
+                                        </a>
+                                        <div style={s.info}>
+                                            <div style={s.name}>{item.name}</div>
+                                            {item.year && <div style={s.year}>{item.year}</div>}
+                                        </div>
+                                        <button
+                                            onClick={function () { remove(item); }}
+                                            title={tr.remove}
+                                            style={s.removeBtn}>✕</button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
             </div>
         </MainNavBars>
     );
 };
 
-const styles = {
-    container: { padding: '20px 32px', color: '#fff' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-    title: { margin: 0, fontSize: 28, fontWeight: 700 },
-    filters: { display: 'flex', gap: 8 },
-    filterBtn: { background: '#111', color: '#bdbdbd', border: '1px solid #2A2A2A', padding: '8px 16px', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+const baseStyles = {
+    scroll: { width: '100%', height: '100%', overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' },
     filterBtnActive: { background: '#E50914', color: '#fff', borderColor: '#E50914' },
-    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 16 },
     card: { position: 'relative', background: '#0a0a0a', borderRadius: 8, overflow: 'hidden' },
     poster: { display: 'block', aspectRatio: '2/3', background: '#1a1a1a', textDecoration: 'none', position: 'relative' },
     posterImg: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
@@ -171,9 +201,28 @@ const styles = {
     name: { fontSize: 13, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     year: { fontSize: 12, color: '#888', marginTop: 2 },
     removeBtn: { position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.7)', color: '#fff', border: 'none', width: 24, height: 24, borderRadius: '50%', cursor: 'pointer', fontSize: 12, fontWeight: 700 },
-    empty: { textAlign: 'center', padding: '80px 20px', color: '#888' },
     emptyTitle: { color: '#fff', fontSize: 22, margin: '0 0 8px 0' },
     emptyBody: { fontSize: 14, margin: 0 },
 };
+
+const stylesDesktop = Object.assign({}, baseStyles, {
+    container: { padding: '20px 32px', color: '#fff' },
+    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 12, flexWrap: 'wrap' },
+    title: { margin: 0, fontSize: 28, fontWeight: 700 },
+    filters: { display: 'flex', gap: 8 },
+    filterBtn: { background: '#111', color: '#bdbdbd', border: '1px solid #2A2A2A', padding: '8px 16px', borderRadius: 999, fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 16 },
+    empty: { textAlign: 'center', padding: '80px 20px', color: '#888' },
+});
+
+const stylesMobile = Object.assign({}, baseStyles, {
+    container: { padding: '14px 12px 32px', color: '#fff' },
+    header: { display: 'flex', flexDirection: 'column', alignItems: 'stretch', marginBottom: 16, gap: 10 },
+    title: { margin: 0, fontSize: 22, fontWeight: 700 },
+    filters: { display: 'flex', gap: 6, width: '100%' },
+    filterBtn: { flex: 1, background: '#111', color: '#bdbdbd', border: '1px solid #2A2A2A', padding: '8px 6px', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' },
+    grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 10 },
+    empty: { textAlign: 'center', padding: '50px 16px', color: '#888' },
+});
 
 module.exports = YamboLibrary;

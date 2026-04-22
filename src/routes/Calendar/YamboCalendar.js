@@ -2,6 +2,7 @@
 // Muestra eventos próximos (episodios, air dates) desde /api/app-tv/calendar.
 
 const React = require('react');
+const { useTranslation } = require('react-i18next');
 const { MainNavBars } = require('stremio/components');
 
 const T = {
@@ -23,33 +24,66 @@ const T = {
         season_ep: 'T{s}E{e}',
         loading: 'Cargando…',
     },
+    pt: {
+        title: 'Calendário',
+        empty_title: 'Sem próximos eventos',
+        empty_body: 'Adicione séries à sua biblioteca e os novos episódios aparecerão aqui.',
+        upcoming: 'Próximos',
+        recent: 'Recentes',
+        season_ep: 'T{s}E{e}',
+        loading: 'Carregando…',
+    },
+    fr: {
+        title: 'Calendrier',
+        empty_title: 'Aucun événement à venir',
+        empty_body: 'Ajoutez des séries à votre bibliothèque et les nouveaux épisodes apparaîtront ici.',
+        upcoming: 'À venir',
+        recent: 'Récents',
+        season_ep: 'S{s}E{e}',
+        loading: 'Chargement…',
+    },
 };
 
-const getLocale = () => {
-    try {
-        var loc = (window.YAMBO_USER && window.YAMBO_USER.locale) ||
-            (navigator.language || 'en').slice(0, 2);
-        return T[loc] ? loc : 'en';
-    } catch (e) { return 'en'; }
+const useYamboLocale = () => {
+    const { i18n } = useTranslation();
+    const raw = (i18n && i18n.language) ? i18n.language
+        : ((typeof window !== 'undefined' && window.YAMBO_USER && window.YAMBO_USER.locale) || 'en');
+    const short = String(raw).split('-')[0].toLowerCase();
+    return T[short] ? short : 'en';
 };
+
+const useIsMobile = () => {
+    const [mobile, setMobile] = React.useState(
+        typeof window !== 'undefined' ? window.innerWidth <= 640 : false
+    );
+    React.useEffect(() => {
+        const onResize = () => setMobile(window.innerWidth <= 640);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+    return mobile;
+};
+
+const LOCALE_MAP = { es: 'es-ES', en: 'en-US', pt: 'pt-BR', fr: 'fr-FR', de: 'de-DE', it: 'it-IT' };
 
 const formatDate = (isoDate, locale) => {
     if (!isoDate) return '';
     try {
-        return new Date(isoDate + 'T00:00:00').toLocaleDateString(locale === 'es' ? 'es-ES' : 'en-US', {
+        return new Date(isoDate + 'T00:00:00').toLocaleDateString(LOCALE_MAP[locale] || 'en-US', {
             weekday: 'short', day: '2-digit', month: 'short'
         });
     } catch (e) { return isoDate; }
 };
 
 const YamboCalendar = () => {
-    const locale = getLocale();
+    const locale = useYamboLocale();
     const tr = T[locale];
+    const mobile = useIsMobile();
 
     const [events, setEvents] = React.useState([]);
     const [loading, setLoading] = React.useState(true);
     const [userId, setUserId] = React.useState(
-        (window.YAMBO_USER && window.YAMBO_USER.id) || 0
+        (typeof window !== 'undefined' && window.YAMBO_USER && window.YAMBO_USER.id) || 0
     );
 
     // Fallback: if window.YAMBO_USER wasn't injected (stale SW), fetch from backend
@@ -85,25 +119,27 @@ const YamboCalendar = () => {
     const upcoming = events.filter(function (e) { return e.air_date >= todayStr; });
     const recent = events.filter(function (e) { return e.air_date < todayStr; }).reverse();
 
+    const s = mobile ? stylesMobile : stylesDesktop;
+
     const renderEvent = function (ev) {
         return (
             <a key={ev.id}
                href={'#/metadetails/series/' + encodeURIComponent(ev.meta_id)}
-               style={styles.eventCard}>
+               style={s.eventCard}>
                 {ev.series_poster ? (
-                    <img src={ev.series_poster} alt="" style={styles.eventPoster} />
+                    <img src={ev.series_poster} alt="" style={s.eventPoster} />
                 ) : (
-                    <div style={styles.eventPosterPlaceholder}>?</div>
+                    <div style={s.eventPosterPlaceholder}>?</div>
                 )}
-                <div style={styles.eventBody}>
-                    <div style={styles.eventSeries}>{ev.series_name || ev.meta_id}</div>
-                    <div style={styles.eventEpisode}>
-                        <span style={styles.eventSE}>
+                <div style={s.eventBody}>
+                    <div style={s.eventSeries}>{ev.series_name || ev.meta_id}</div>
+                    <div style={s.eventEpisode}>
+                        <span style={s.eventSE}>
                             {tr.season_ep.replace('{s}', ev.season).replace('{e}', ev.episode)}
                         </span>
-                        {ev.episode_name && <span style={styles.eventName}> — {ev.episode_name}</span>}
+                        {ev.episode_name && <span style={s.eventName}> — {ev.episode_name}</span>}
                     </div>
-                    <div style={styles.eventDate}>{formatDate(ev.air_date, locale)}</div>
+                    <div style={s.eventDate}>{formatDate(ev.air_date, locale)}</div>
                 </div>
             </a>
         );
@@ -111,42 +147,41 @@ const YamboCalendar = () => {
 
     return (
         <MainNavBars route={'calendar'}>
-            <div style={styles.container}>
-                <h1 style={styles.title}>{tr.title}</h1>
+            <div style={s.scroll}>
+                <div style={s.container}>
+                    <h1 style={s.title}>{tr.title}</h1>
 
-                {loading ? (
-                    <div style={styles.empty}>{tr.loading}</div>
-                ) : events.length === 0 ? (
-                    <div style={styles.empty}>
-                        <h2 style={styles.emptyTitle}>{tr.empty_title}</h2>
-                        <p style={styles.emptyBody}>{tr.empty_body}</p>
-                    </div>
-                ) : (
-                    <React.Fragment>
-                        {upcoming.length > 0 && (
-                            <div>
-                                <h2 style={styles.sectionTitle}>{tr.upcoming}</h2>
-                                <div style={styles.eventGrid}>{upcoming.map(renderEvent)}</div>
-                            </div>
-                        )}
-                        {recent.length > 0 && (
-                            <div style={{ marginTop: 32 }}>
-                                <h2 style={styles.sectionTitle}>{tr.recent}</h2>
-                                <div style={styles.eventGrid}>{recent.map(renderEvent)}</div>
-                            </div>
-                        )}
-                    </React.Fragment>
-                )}
+                    {loading ? (
+                        <div style={s.empty}>{tr.loading}</div>
+                    ) : events.length === 0 ? (
+                        <div style={s.empty}>
+                            <h2 style={s.emptyTitle}>{tr.empty_title}</h2>
+                            <p style={s.emptyBody}>{tr.empty_body}</p>
+                        </div>
+                    ) : (
+                        <React.Fragment>
+                            {upcoming.length > 0 && (
+                                <div>
+                                    <h2 style={s.sectionTitle}>{tr.upcoming}</h2>
+                                    <div style={s.eventGrid}>{upcoming.map(renderEvent)}</div>
+                                </div>
+                            )}
+                            {recent.length > 0 && (
+                                <div style={{ marginTop: 32 }}>
+                                    <h2 style={s.sectionTitle}>{tr.recent}</h2>
+                                    <div style={s.eventGrid}>{recent.map(renderEvent)}</div>
+                                </div>
+                            )}
+                        </React.Fragment>
+                    )}
+                </div>
             </div>
         </MainNavBars>
     );
 };
 
-const styles = {
-    container: { padding: '20px 32px', color: '#fff' },
-    title: { margin: '0 0 24px 0', fontSize: 28, fontWeight: 700 },
-    sectionTitle: { fontSize: 18, fontWeight: 700, margin: '0 0 12px 0', color: '#fff' },
-    eventGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 },
+const baseStyles = {
+    scroll: { width: '100%', height: '100%', overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' },
     eventCard: { display: 'flex', gap: 12, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: 10, textDecoration: 'none', color: '#fff', transition: 'border-color .15s' },
     eventPoster: { width: 60, height: 90, objectFit: 'cover', borderRadius: 4, flexShrink: 0 },
     eventPosterPlaceholder: { width: 60, height: 90, background: '#1a1a1a', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444', flexShrink: 0, fontSize: 20, fontWeight: 800 },
@@ -156,9 +191,24 @@ const styles = {
     eventSE: { color: '#E50914', fontWeight: 700 },
     eventName: { color: '#bdbdbd' },
     eventDate: { fontSize: 12, color: '#888', marginTop: 2 },
-    empty: { textAlign: 'center', padding: '80px 20px', color: '#888' },
     emptyTitle: { color: '#fff', fontSize: 22, margin: '0 0 8px 0' },
     emptyBody: { fontSize: 14, margin: 0 },
 };
+
+const stylesDesktop = Object.assign({}, baseStyles, {
+    container: { padding: '20px 32px 48px', color: '#fff' },
+    title: { margin: '0 0 24px 0', fontSize: 28, fontWeight: 700 },
+    sectionTitle: { fontSize: 18, fontWeight: 700, margin: '0 0 12px 0', color: '#fff' },
+    eventGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 },
+    empty: { textAlign: 'center', padding: '80px 20px', color: '#888' },
+});
+
+const stylesMobile = Object.assign({}, baseStyles, {
+    container: { padding: '14px 12px 48px', color: '#fff' },
+    title: { margin: '0 0 16px 0', fontSize: 22, fontWeight: 700 },
+    sectionTitle: { fontSize: 16, fontWeight: 700, margin: '0 0 10px 0', color: '#fff' },
+    eventGrid: { display: 'grid', gridTemplateColumns: '1fr', gap: 10 },
+    empty: { textAlign: 'center', padding: '50px 16px', color: '#888' },
+});
 
 module.exports = YamboCalendar;

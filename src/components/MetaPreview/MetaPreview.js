@@ -28,8 +28,14 @@ const ALLOWED_LINK_REDIRECTS = [
 const MetaPreview = React.forwardRef(({ className, compact, name, logo, background, runtime, releaseInfo, released, description, deepLinks, links, trailerStreams, inLibrary, toggleInLibrary, ratingInfo }, ref) => {
     const { t } = useTranslation();
     const [shareModalOpen, openShareModal, closeShareModal] = useBinaryState(false);
+    // Yammbo TV: share link siempre apunta a tv.yammbo.com (URL de la vista actual)
+    // en vez del shortener strem.io/s/... que devuelve Cinemeta.
+    const yamboShareHref = React.useMemo(() => {
+        if (typeof window === 'undefined') return null;
+        return window.location.href;
+    }, []);
     const linksGroups = React.useMemo(() => {
-        return Array.isArray(links) ?
+        const groups = Array.isArray(links) ?
             links
                 .filter((link) => link && typeof link.category === 'string' && typeof link.url === 'string')
                 .reduce((linksGroups, { category, name, url }) => {
@@ -44,7 +50,7 @@ const MetaPreview = React.forwardRef(({ className, compact, name, logo, backgrou
                     } else if (category === CONSTANTS.SHARE_LINK_CATEGORY) {
                         linksGroups.set(category, {
                             label: name,
-                            href: url
+                            href: yamboShareHref || url
                         });
                     } else {
                         if (protocol === 'stremio:') {
@@ -72,7 +78,12 @@ const MetaPreview = React.forwardRef(({ className, compact, name, logo, backgrou
                 }, new Map())
             :
             new Map();
-    }, [links]);
+        // Asegura botón Share visible incluso si el addon no devuelve un link share.
+        if (!groups.has(CONSTANTS.SHARE_LINK_CATEGORY) && yamboShareHref) {
+            groups.set(CONSTANTS.SHARE_LINK_CATEGORY, { label: 'Share', href: yamboShareHref });
+        }
+        return groups;
+    }, [links, yamboShareHref]);
     const showHref = React.useMemo(() => {
         return deepLinks ?
             typeof deepLinks.player === 'string' ?
