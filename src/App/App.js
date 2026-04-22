@@ -157,6 +157,56 @@ const App = () => {
             if (state?.profile?.settings?.quitOnClose && shell.windowClosed) {
                 shell.send('quit');
             }
+
+            // Yammbo TV: sync one-time de interfaceLanguage + subtitlesLanguage
+            // + audioLanguage desde el locale del usuario (window.YAMBO_USER.locale)
+            // o navigator.language. Sólo se ejecuta una vez por cliente — si el
+            // usuario cambia idioma a mano en Settings, no lo sobreescribimos.
+            try {
+                var SYNC_KEY = 'yambo_lang_synced_v1';
+                if (state && state.profile && state.profile.settings
+                    && typeof localStorage !== 'undefined'
+                    && localStorage.getItem(SYNC_KEY) !== '1') {
+
+                    var yu = (typeof window !== 'undefined') ? window.YAMBO_USER : null;
+                    var navLang = (typeof navigator !== 'undefined')
+                        ? (navigator.language || (navigator.languages && navigator.languages[0]))
+                        : null;
+                    var raw = (yu && yu.locale) ? yu.locale : navLang;
+                    var short = (raw ? String(raw).split('-')[0].toLowerCase() : 'en');
+                    var toBcp47 = {
+                        'es': 'es-ES', 'en': 'en-US', 'pt': 'pt-BR', 'fr': 'fr-FR',
+                        'de': 'de-DE', 'it': 'it-IT', 'nl': 'nl-NL', 'pl': 'pl-PL',
+                        'ru': 'ru-RU', 'tr': 'tr-TR'
+                    };
+                    var toIso3 = {
+                        'es': 'spa', 'en': 'eng', 'pt': 'por', 'fr': 'fre',
+                        'de': 'ger', 'it': 'ita', 'nl': 'nld', 'pl': 'pol',
+                        'ru': 'rus', 'tr': 'tur', 'ja': 'jpn', 'ko': 'kor',
+                        'zh': 'chi', 'ar': 'ara', 'hi': 'hin'
+                    };
+                    var desired = {
+                        interfaceLanguage: toBcp47[short] || 'en-US',
+                        subtitlesLanguage: toIso3[short] || 'eng',
+                        audioLanguage: toIso3[short] || 'eng'
+                    };
+                    var current = state.profile.settings;
+                    var diff = (current.interfaceLanguage !== desired.interfaceLanguage)
+                        || (current.subtitlesLanguage !== desired.subtitlesLanguage)
+                        || (current.audioLanguage !== desired.audioLanguage);
+                    if (diff) {
+                        services.core.transport.dispatch({
+                            action: 'Ctx',
+                            args: {
+                                action: 'UpdateSettings',
+                                args: Object.assign({}, current, desired)
+                            }
+                        });
+                        i18n.changeLanguage(desired.interfaceLanguage);
+                    }
+                    localStorage.setItem(SYNC_KEY, '1');
+                }
+            } catch (e) { /* best-effort only */ }
         };
         const onWindowFocus = () => {
             services.core.transport.dispatch({

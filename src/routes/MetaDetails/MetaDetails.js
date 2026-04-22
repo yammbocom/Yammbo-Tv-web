@@ -40,6 +40,24 @@ const MetaDetails = ({ urlParams, queryParams }) => {
     }, [metaDetails.metaItem, streamPath]);
     // Yammbo TV: cuando window.YAMBO_USER presente (o detectable via session),
     // usar nuestro backend Laravel (/api/app-tv/library/toggle) en vez del Stremio Core dispatch.
+    const [yamboInLibrary, setYamboInLibrary] = React.useState(null);
+
+    const yamboGetUserId = React.useCallback(() => {
+        if (typeof window === 'undefined') return Promise.resolve(0);
+        var u = window.YAMBO_USER;
+        if (u && u.id) return Promise.resolve(u.id);
+        return fetch('/api/app-tv/whoami', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d && d.user && d.user.id) {
+                    window.YAMBO_USER = d.user;
+                    return d.user.id;
+                }
+                return 0;
+            })
+            .catch(function () { return 0; });
+    }, []);
+
     const yamboPostToggle = React.useCallback((userId) => {
         const meta = metaDetails.metaItem.content.content;
         return fetch('/api/app-tv/library/toggle', {
@@ -58,29 +76,52 @@ const MetaDetails = ({ urlParams, queryParams }) => {
                 meta_runtime: meta.runtime ? parseInt(meta.runtime, 10) : null,
                 meta_genres: Array.isArray(meta.genres) ? meta.genres : null
             })
-        });
+        }).then(function (r) { return r.json(); });
     }, [metaDetails]);
+
+    // Sync yamboInLibrary state al montar y cuando cambia el meta
+    React.useEffect(function () {
+        if (metaDetails.metaItem === null || metaDetails.metaItem.content.type !== 'Ready') return;
+        var meta = metaDetails.metaItem.content.content;
+        var metaType = meta.type === 'movie' ? 'movie' : (meta.type === 'series' ? 'series' : 'channel');
+        var metaId = meta.id;
+        var cancelled = false;
+        yamboGetUserId().then(function (userId) {
+            if (cancelled || !userId) { if (!cancelled) setYamboInLibrary(null); return; }
+            fetch('/api/app-tv/library/status?user_id=' + userId
+                + '&meta_id=' + encodeURIComponent(metaId)
+                + '&meta_type=' + encodeURIComponent(metaType), {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            }).then(function (r) { return r.json(); })
+              .then(function (d) { if (!cancelled) setYamboInLibrary(!!(d && d.in_library)); })
+              .catch(function () {});
+        });
+        return function () { cancelled = true; };
+    }, [metaDetails.metaItem, yamboGetUserId]);
 
     const yamboToggle = React.useCallback(() => {
         if (metaDetails.metaItem === null || metaDetails.metaItem.content.type !== 'Ready') return false;
-        var yamboUser = (typeof window !== 'undefined') ? window.YAMBO_USER : null;
-        if (yamboUser && yamboUser.id) {
-            yamboPostToggle(yamboUser.id).catch(function (e) { console.error('Yambo library toggle failed', e); });
-            return true;
-        }
-        // Fallback: fetch whoami then retry
-        fetch('/api/app-tv/whoami', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
-            .then(function (r) { return r.json(); })
-            .then(function (d) {
-                if (d && d.user && d.user.id) {
-                    window.YAMBO_USER = d.user;
-                    return yamboPostToggle(d.user.id);
-                }
-                return null;
-            })
-            .catch(function (e) { console.error('Yambo whoami/toggle failed', e); });
-        return true; // prevent Stremio Core fallback — we handled it async
-    }, [metaDetails, yamboPostToggle]);
+        // Optimistic flip based on current known state
+        var prev = yamboInLibrary;
+        if (prev !== null) setYamboInLibrary(!prev);
+        yamboGetUserId().then(function (userId) {
+            if (!userId) {
+                if (prev !== null) setYamboInLibrary(prev); // rollback — sin usuario
+                return;
+            }
+            yamboPostToggle(userId)
+                .then(function (d) {
+                    if (d && d.action === 'added') setYamboInLibrary(true);
+                    else if (d && d.action === 'removed') setYamboInLibrary(false);
+                })
+                .catch(function (e) {
+                    console.error('Yambo library toggle failed', e);
+                    if (prev !== null) setYamboInLibrary(prev);
+                });
+        });
+        return true; // prevent Stremio Core fallback
+    }, [metaDetails, yamboInLibrary, yamboGetUserId, yamboPostToggle]);
 
     const addToLibrary = React.useCallback(() => {
         if (metaDetails.metaItem === null || metaDetails.metaItem.content.type !== 'Ready') {
@@ -218,8 +259,8 @@ const MetaDetails = ({ urlParams, queryParams }) => {
                                             }
                                             links={metaDetails.metaItem.content.content.links}
                                             trailerStreams={metaDetails.metaItem.content.content.trailerStreams}
-                                            inLibrary={metaDetails.metaItem.content.content.inLibrary}
-                                            toggleInLibrary={metaDetails.metaItem.content.content.inLibrary ? removeFromLibrary : addToLibrary}
+                                            inLibrary={yamboInLibrary !== null ? yamboInLibrary : metaDetails.metaItem.content.content.inLibrary}
+                                            toggleInLibrary={(yamboInLibrary !== null ? yamboInLibrary : metaDetails.metaItem.content.content.inLibrary) ? removeFromLibrary : addToLibrary}
                                             metaId={metaDetails.metaItem.content.content.id}
                                             ratingInfo={metaDetails.ratingInfo}
                                         />

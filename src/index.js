@@ -22,11 +22,45 @@ const translations = Object.fromEntries(Object.entries(stremioTranslations()).ma
     translation: value
 }]));
 
+// Yammbo TV: auto-detectar idioma desde (1) window.YAMBO_USER.locale,
+// (2) navigator.language, fallback 'en-US'. Código usado aquí = BCP-47
+// (stremio-translations: en-US, es-ES, pt-BR, fr-FR, de-DE, it-IT, ...).
+const yamboDetectInterfaceLanguage = function () {
+    try {
+        var available = Object.keys(translations);
+        var shortMap = {
+            'es': 'es-ES', 'en': 'en-US', 'pt': 'pt-BR', 'fr': 'fr-FR',
+            'de': 'de-DE', 'it': 'it-IT', 'nl': 'nl-NL', 'pl': 'pl-PL',
+            'ru': 'ru-RU', 'ar': 'ar-AR', 'tr': 'tr-TR', 'ja': 'ja-JP',
+            'ko': 'ko-KR', 'zh': 'zh-CN', 'cs': 'cs-CZ', 'el': 'el-GR',
+            'he': 'he-IL', 'hi': 'hi-IN', 'hr': 'hr-HR', 'hu': 'hu-HU',
+            'id': 'id-ID', 'ro': 'ro-RO', 'sv': 'sv-SE', 'th': 'th-TH',
+            'uk': 'uk-UA', 'vi': 'vi-VN', 'bg': 'bg-BG', 'da': 'da-DK',
+            'fi': 'fi-FI', 'no': 'no-NO', 'sk': 'sk-SK', 'sl': 'sl-SI'
+        };
+        var tryCandidate = function (raw) {
+            if (!raw) return null;
+            raw = String(raw);
+            if (available.indexOf(raw) !== -1) return raw;
+            var short = raw.split('-')[0].toLowerCase();
+            if (shortMap[short] && available.indexOf(shortMap[short]) !== -1) return shortMap[short];
+            var pref = available.find(function (c) { return c.toLowerCase().indexOf(short + '-') === 0; });
+            return pref || null;
+        };
+        var yu = (typeof window !== 'undefined') ? window.YAMBO_USER : null;
+        var yamboLocale = (yu && yu.locale) ? yu.locale : null;
+        var navLang = (typeof navigator !== 'undefined') ? (navigator.language || (navigator.languages && navigator.languages[0])) : null;
+        return tryCandidate(yamboLocale) || tryCandidate(navLang) || 'en-US';
+    } catch (e) { return 'en-US'; }
+};
+
+const yamboInitialLang = yamboDetectInterfaceLanguage();
+
 i18n
     .use(initReactI18next)
     .init({
         resources: translations,
-        lng: 'en-US',
+        lng: yamboInitialLang,
         fallbackLng: 'en-US',
         interpolation: {
             escapeValue: false
