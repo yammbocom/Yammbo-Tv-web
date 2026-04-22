@@ -38,10 +38,39 @@ const MetaDetails = ({ urlParams, queryParams }) => {
             :
             null;
     }, [metaDetails.metaItem, streamPath]);
+    // Yammbo TV: cuando window.YAMBO_USER presente, usar nuestro backend Laravel
+    // (/api/app-tv/library/toggle) en vez del Stremio Core dispatch.
+    const yamboToggle = React.useCallback(() => {
+        if (metaDetails.metaItem === null || metaDetails.metaItem.content.type !== 'Ready') return;
+        const yamboUser = (typeof window !== 'undefined') ? window.YAMBO_USER : null;
+        if (!yamboUser || !yamboUser.id) return false;
+        const meta = metaDetails.metaItem.content.content;
+        fetch('/api/app-tv/library/toggle', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: yamboUser.id,
+                meta_id: meta.id,
+                meta_type: meta.type === 'movie' ? 'movie' : (meta.type === 'series' ? 'series' : 'channel'),
+                meta_name: meta.name || '',
+                meta_poster: meta.poster || null,
+                meta_background: meta.background || null,
+                meta_year: meta.year ? String(meta.year) : null,
+                meta_rating: meta.imdbRating ? parseFloat(meta.imdbRating) : null,
+                meta_runtime: meta.runtime ? parseInt(meta.runtime, 10) : null,
+                meta_genres: Array.isArray(meta.genres) ? meta.genres : null
+            })
+        }).catch(function (e) { console.error('Yambo library toggle failed', e); });
+        return true;
+    }, [metaDetails]);
+
     const addToLibrary = React.useCallback(() => {
         if (metaDetails.metaItem === null || metaDetails.metaItem.content.type !== 'Ready') {
             return;
         }
+
+        if (yamboToggle()) return;
 
         core.transport.dispatch({
             action: 'Ctx',
@@ -50,11 +79,13 @@ const MetaDetails = ({ urlParams, queryParams }) => {
                 args: metaDetails.metaItem.content.content
             }
         });
-    }, [metaDetails]);
+    }, [metaDetails, yamboToggle]);
     const removeFromLibrary = React.useCallback(() => {
         if (metaDetails.metaItem === null || metaDetails.metaItem.content.type !== 'Ready') {
             return;
         }
+
+        if (yamboToggle()) return;
 
         core.transport.dispatch({
             action: 'Ctx',
@@ -63,7 +94,7 @@ const MetaDetails = ({ urlParams, queryParams }) => {
                 args: metaDetails.metaItem.content.content.id
             }
         });
-    }, [metaDetails]);
+    }, [metaDetails, yamboToggle]);
     const toggleNotifications = React.useCallback(() => {
         if (metaDetails.libraryItem) {
             core.transport.dispatch({
