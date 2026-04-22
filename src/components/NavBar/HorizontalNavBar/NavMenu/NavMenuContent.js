@@ -15,10 +15,17 @@ const { withCoreSuspender } = require('stremio/common/CoreSuspender');
 const useStreamingServer = require('stremio/common/useStreamingServer');
 const styles = require('./styles');
 
+// Yammbo TV: detecta usuario autenticado en Laravel/Wave (inyectado via window.YAMBO_USER).
+const getYamboUser = () => {
+    if (typeof window === 'undefined') return null;
+    return window.YAMBO_USER || null;
+};
+
 const NavMenuContent = ({ onClick }) => {
     const { t } = useTranslation();
     const { core } = useServices();
     const profile = useProfile();
+    const yamboUser = getYamboUser();
     const streamingServer = useStreamingServer();
     const { createTorrentFromMagnet } = useTorrent();
     const [fullscreen, requestFullscreen, exitFullscreen] = useFullscreen();
@@ -62,10 +69,10 @@ const NavMenuContent = ({ onClick }) => {
                 />
                 <div className={styles['user-info-details']}>
                     <div className={styles['email-container']}>
-                        <div className={styles['email-label']}>{profile.auth === null ? t('ANONYMOUS_USER') : profile.auth.user.email}</div>
+                        <div className={styles['email-label']}>{yamboUser ? (yamboUser.name || yamboUser.email) : (profile.auth === null ? t('ANONYMOUS_USER') : profile.auth.user.email)}</div>
                     </div>
-                    <Button className={styles['logout-button-container']} title={profile.auth === null ? `${t('LOG_IN')} / ${t('SIGN_UP')}` : t('LOG_OUT')} href={profile.auth === null ? '/login' : '/logout'} onClick={null}>
-                        <div className={styles['logout-label']}>{profile.auth === null ? `${t('LOG_IN')} / ${t('SIGN_UP')}` : t('LOG_OUT')}</div>
+                    <Button className={styles['logout-button-container']} title={yamboUser ? t('LOG_OUT') : (profile.auth === null ? `${t('LOG_IN')} / ${t('SIGN_UP')}` : t('LOG_OUT'))} href={yamboUser ? '/logout' : (profile.auth === null ? '/login' : '/logout')} target={yamboUser ? '_self' : undefined} onClick={null}>
+                        <div className={styles['logout-label']}>{yamboUser ? t('LOG_OUT') : (profile.auth === null ? `${t('LOG_IN')} / ${t('SIGN_UP')}` : t('LOG_OUT'))}</div>
                     </Button>
                 </div>
             </div>

@@ -8,9 +8,19 @@ type Props = {
     profile: Profile,
 };
 
+// Yammbo TV: user autenticado en Laravel/Wave inyectado via window.YAMBO_USER.
+const getYamboUser = (): { email?: string; name?: string } | null => {
+    if (typeof window === 'undefined') return null;
+    return (window as any).YAMBO_USER || null;
+};
+
 const User = ({ profile }: Props) => {
     const { t } = useTranslation();
     const { core } = useServices();
+    const yamboUser = getYamboUser();
+    const displayName = yamboUser
+        ? (yamboUser.name || yamboUser.email || '')
+        : (profile.auth === null ? t('ANONYMOUS_USER') : profile.auth.user.email);
 
     const avatar = useMemo(() => (
         !profile.auth ?
@@ -39,23 +49,30 @@ const User = ({ profile }: Props) => {
                     style={{ backgroundImage: avatar }}
                 />
                 <div className={styles['email-logout-container']}>
-                    <div className={styles['email-label-container']} title={profile.auth === null ? t('ANONYMOUS_USER') : profile.auth.user.email}>
+                    <div className={styles['email-label-container']} title={displayName}>
                         <div className={styles['email-label']}>
-                            {profile.auth === null ? t('ANONYMOUS_USER') : profile.auth.user.email}
+                            {displayName}
                         </div>
                     </div>
                     {
-                        profile.auth !== null ?
+                        yamboUser ?
                             <Link
                                 label={t('LOG_OUT')}
-                                onClick={onLogout}
-                            />
-                            :
-                            <Link
-                                label={`${t('LOG_IN')} / ${t('SIGN_UP')}`}
-                                href={'/login'}
+                                href={'/logout'}
                                 target={'_self'}
                             />
+                            :
+                            profile.auth !== null ?
+                                <Link
+                                    label={t('LOG_OUT')}
+                                    onClick={onLogout}
+                                />
+                                :
+                                <Link
+                                    label={`${t('LOG_IN')} / ${t('SIGN_UP')}`}
+                                    href={'/login'}
+                                    target={'_self'}
+                                />
                     }
                 </div>
             </div>
