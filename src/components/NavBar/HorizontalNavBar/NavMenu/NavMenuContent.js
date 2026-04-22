@@ -108,7 +108,7 @@ const NavMenuContent = ({ onClick }) => {
                         <Button
                             className={styles['nav-menu-option-container']}
                             title={yamboPremium ? yamboL.title_active : yamboL.title_upgrade}
-                            href={'/app-tv/subscription'}
+                            href={'/pricing'}
                             target={'_self'}
                             style={yamboPremium ? null : { background: '#E50914', color: '#fff' }}>
                             <Icon className={styles['icon']} name={yamboPremium ? 'checkmark' : 'star'} />

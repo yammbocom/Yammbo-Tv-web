@@ -171,7 +171,7 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                                     <div style={yamboCtaStyles.wrap}>
                                         <div style={yamboCtaStyles.title}>{yamboL.title}</div>
                                         <div style={yamboCtaStyles.subtitle}>{yamboL.subtitle}</div>
-                                        <a href={'/app-tv/subscription'} style={yamboCtaStyles.button}>{yamboL.button}</a>
+                                        <a href={'/pricing'} style={yamboCtaStyles.button}>{yamboL.button}</a>
                                     </div>
                                     :
                                     <div style={yamboCtaStyles.wrapQuiet}>
