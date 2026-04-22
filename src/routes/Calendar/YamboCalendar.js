@@ -48,8 +48,24 @@ const YamboCalendar = () => {
 
     const [events, setEvents] = React.useState([]);
     const [loading, setLoading] = React.useState(true);
+    const [userId, setUserId] = React.useState(
+        (window.YAMBO_USER && window.YAMBO_USER.id) || 0
+    );
 
-    const userId = (window.YAMBO_USER && window.YAMBO_USER.id) || 0;
+    // Fallback: if window.YAMBO_USER wasn't injected (stale SW), fetch from backend
+    React.useEffect(function () {
+        if (userId) return;
+        fetch('/api/app-tv/whoami', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d && d.user && d.user.id) {
+                    window.YAMBO_USER = d.user;
+                    setUserId(d.user.id);
+                } else {
+                    setLoading(false);
+                }
+            }).catch(function () { setLoading(false); });
+    }, [userId]);
 
     React.useEffect(function () {
         if (!userId) { setLoading(false); return; }
