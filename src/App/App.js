@@ -113,6 +113,35 @@ const App = () => {
             .catch(() => {});
     }, [initialized, yamboUser && yamboUser.subscription_active]);
 
+    // Yammbo TV: set the streaming server cache to 10 GiB once (server default is 2 GiB).
+    // Polls until the local server connects, then respects any later manual change.
+    React.useEffect(() => {
+        if (!initialized || !services.core.active) return;
+        if (typeof localStorage === 'undefined' || localStorage.getItem('yambo_cache_synced_v1') === '1') return;
+        var DESIRED_CACHE = 10737418240;
+        var done = false;
+        var trySet = function () {
+            if (done) return;
+            services.core.transport.getState('streaming_server').then(function (st) {
+                if (done) return;
+                if (st && st.settings && st.settings.type === 'Ready' && st.settings.content) {
+                    if (st.settings.content.cacheSize !== DESIRED_CACHE) {
+                        services.core.transport.dispatch({
+                            action: 'StreamingServer',
+                            args: { action: 'UpdateSettings', args: Object.assign({}, st.settings.content, { cacheSize: DESIRED_CACHE }) }
+                        });
+                    }
+                    try { localStorage.setItem('yambo_cache_synced_v1', '1'); } catch (e) {}
+                    done = true;
+                }
+            }).catch(function () {});
+        };
+        var iv = setInterval(trySet, 2000);
+        trySet();
+        var to = setTimeout(function () { clearInterval(iv); }, 30000);
+        return function () { done = true; clearInterval(iv); clearTimeout(to); };
+    }, [initialized]);
+
     const onShortcut = React.useCallback((name) => {
         if (name === 'shortcuts') {
             toggleShortcutModal();

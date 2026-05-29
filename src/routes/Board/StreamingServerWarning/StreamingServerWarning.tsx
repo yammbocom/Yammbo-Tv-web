@@ -14,9 +14,19 @@ type Props = {
 };
 
 const StreamingServerWarning = ({ className }: Props) => {
-    const { t } = useTranslation();
+    const { i18n } = useTranslation();
     const { core } = useServices();
     const profile = useProfile();
+
+    // Yammbo Tv: localized copy without relying on the i18n bundle.
+    const lang = (i18n && i18n.language ? i18n.language : 'en').toLowerCase();
+    const isEs = lang.indexOf('es') === 0;
+    const statement = isEs
+        ? 'Para reproducir películas y series necesitas instalar Yammbo TV Service en tu equipo. Es gratis y rápido.'
+        : 'To play movies and series you need to install Yammbo TV Service on your device. It is free and quick.';
+    const installLabel = isEs ? 'Cómo instalar' : 'How to install';
+    const laterLabel = isEs ? 'Más tarde' : 'Later';
+    const dismissLabel = isEs ? 'No mostrar de nuevo' : 'Don\'t show again';
 
     const createDismissalDate = (months: number, years = 0): Date => {
         const dismissalDate = new Date();
@@ -52,48 +62,48 @@ const StreamingServerWarning = ({ className }: Props) => {
         updateSettings(createDismissalDate(0, 50));
     }, [updateSettings]);
 
-    // Yammbo Tv: local streaming server is optional; warning suppressed.
+    // Yammbo Tv: hidden until go-live (remove next two lines to enable).
     return null;
     // eslint-disable-next-line no-unreachable
     return (
         <div className={classnames(className, styles['warning-container'])}>
             <div className={styles['warning-statement']}>
-                {t('SETTINGS_SERVER_UNAVAILABLE')}
+                {statement}
             </div>
             <div className={styles['actions']}>
                 <a
-                    href='https://www.stremio.com/download-service'
+                    href='https://tv.yammbo.com/install'
                     target='_blank'
                     rel='noreferrer'
                 >
                     <Button
                         className={styles['action']}
-                        title={t('SERVICE_INSTALL')}
+                        title={installLabel}
                         tabIndex={-1}
                     >
                         <div className={styles['label']}>
-                            {t('SERVICE_INSTALL')}
+                            {installLabel}
                         </div>
                     </Button>
                 </a>
                 <Button
                     className={styles['action']}
-                    title={t('WARNING_STREAMING_SERVER_LATER')}
+                    title={laterLabel}
                     onClick={onLater}
                     tabIndex={-1}
                 >
                     <div className={styles['label']}>
-                        {t('WARNING_STREAMING_SERVER_LATER')}
+                        {laterLabel}
                     </div>
                 </Button>
                 <Button
                     className={styles['action']}
-                    title={t('DONT_SHOW_AGAIN')}
+                    title={dismissLabel}
                     onClick={onDismiss}
                     tabIndex={-1}
                 >
                     <div className={styles['label']}>
-                        {t('DONT_SHOW_AGAIN')}
+                        {dismissLabel}
                     </div>
                 </Button>
             </div>
