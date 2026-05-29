@@ -62,9 +62,6 @@ const StreamingServerWarning = ({ className }: Props) => {
         updateSettings(createDismissalDate(0, 50));
     }, [updateSettings]);
 
-    // Yammbo Tv: hidden until go-live (remove next two lines to enable).
-    return null;
-    // eslint-disable-next-line no-unreachable
     return (
         <div className={classnames(className, styles['warning-container'])}>
             <div className={styles['warning-statement']}>
