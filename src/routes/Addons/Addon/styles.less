@@ -270,3 +270,16 @@
         }
     }
 }
+
+/*
+ * Los tipos ya vienen capitalizados desde las traducciones ("Pelicula",
+ * "Series"). Con el text-transform capitalize heredado, la conjuncion tambien
+ * se capitalizaba y la fila quedaba "Pelicula Y Series".
+ */
+.addon-container {
+    .info-container {
+        .types-container {
+            text-transform: none;
+        }
+    }
+}
