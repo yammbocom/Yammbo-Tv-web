@@ -115,7 +115,11 @@ let yamboCatalogChecked = false;
 function yamboRefreshCatalogAddon(core, installed) {
     if (yamboCatalogChecked) return;
     yamboCatalogChecked = true;
-    fetch(YAMBO_CATALOG_URL, { credentials: 'omit' })
+    // `cache: 'no-cache'` revalida contra el servidor. El manifest se sirve con
+    // max-age=3600, así que sin esto la comprobación de versión leía la copia
+    // del propio navegador y no se enteraba de un despliegue hasta una hora
+    // después: una comprobación que casi nunca puede detectar el cambio.
+    fetch(YAMBO_CATALOG_URL, { credentials: 'omit', cache: 'no-cache' })
         .then((r) => (r.ok ? r.json() : null))
         .then((manifest) => {
             if (!manifest || manifest.version === installed.manifest.version) return;
