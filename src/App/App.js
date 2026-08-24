@@ -105,6 +105,35 @@ function yamboInstallFromUrl(core, url) {
         .catch(() => { /* best-effort: sin streams premium, pero la app sigue */ });
 }
 
+// El perfil guarda una COPIA del manifest dentro del descriptor instalado, así
+// que un cambio nuestro (catálogos nuevos, otro texto, otro logo) no le llegaría
+// nunca a quien ya lo tiene: seguiría viendo la versión del día que lo instaló.
+// Se compara la versión una vez por sesión; InstallAddon sobre la misma
+// transportUrl reemplaza el descriptor.
+let yamboCatalogChecked = false;
+
+function yamboRefreshCatalogAddon(core, installed) {
+    if (yamboCatalogChecked) return;
+    yamboCatalogChecked = true;
+    fetch(YAMBO_CATALOG_URL, { credentials: 'omit' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((manifest) => {
+            if (!manifest || manifest.version === installed.manifest.version) return;
+            core.transport.dispatch({
+                action: 'Ctx',
+                args: {
+                    action: 'InstallAddon',
+                    args: {
+                        manifest: manifest,
+                        transportUrl: YAMBO_CATALOG_URL,
+                        flags: { official: false, protected: false }
+                    }
+                }
+            });
+        })
+        .catch(() => { /* best-effort: se queda con la copia que ya tenía */ });
+}
+
 function yamboApplyAddonPolicy(core, addons, premiumOverride) {
     if (!core || !core.transport || !Array.isArray(addons)) return;
     const premium = typeof premiumOverride === 'boolean' ? premiumOverride : yamboGetSubscriptionActive();
@@ -121,8 +150,11 @@ function yamboApplyAddonPolicy(core, addons, premiumOverride) {
         }
     });
 
-    if (!addons.some((a) => a && a.manifest && a.manifest.id === YAMBO_CATALOG_ID)) {
+    const catalogAddon = addons.find((a) => a && a.manifest && a.manifest.id === YAMBO_CATALOG_ID);
+    if (!catalogAddon) {
         yamboInstallFromUrl(core, YAMBO_CATALOG_URL);
+    } else {
+        yamboRefreshCatalogAddon(core, catalogAddon);
     }
 
     const premiumAddon = addons.find((a) => a && a.manifest && a.manifest.id === YAMBO_PREMIUM_ID);
