@@ -24,9 +24,64 @@ const { ensureWhoami } = require('stremio/common/useYamboUser');
 // ya tiene subscription_active (ruta /app inyectó el script), ensureWhoami es no-op.
 ensureWhoami();
 
-const translations = Object.fromEntries(Object.entries(stremioTranslations()).map(([key, value]) => [key, {
-    translation: value
-}]));
+// Yammbo TV: claves propias y parches sobre stremio-translations.
+//
+// Van aqui y no dentro del paquete para que sobrevivan a un `pnpm install`.
+// `ADDON_YAMMBO` es obligatoria: sin ella el selector de catalogos mostraria
+// "YAMMBO" en mayusculas, porque el fallback de stringWithPrefix solo capitaliza
+// la primera letra de la clave.
+const yamboTranslationOverrides = {
+    'en-US': {
+        ADDON_YAMMBO: 'Yammbo picks',
+        YAMBO_AND: 'and',
+        YAMBO_ADDON_MANAGED: 'Included in your plan',
+        TYPE_anime: 'Anime',
+        TYPE_collections: 'Collections',
+        TYPE_events: 'Events',
+        TYPE_music: 'Music',
+    },
+    'es-ES': {
+        ADDON_YAMMBO: 'Selección Yammbo',
+        YAMBO_AND: 'y',
+        YAMBO_ADDON_MANAGED: 'Incluido en tu plan',
+        TYPE_anime: 'Anime',
+        TYPE_collections: 'Colecciones',
+        TYPE_events: 'Eventos',
+        TYPE_music: 'Música',
+    },
+    'pt-BR': {
+        ADDON_YAMMBO: 'Seleção Yammbo',
+        YAMBO_AND: 'e',
+        YAMBO_ADDON_MANAGED: 'Incluído no seu plano',
+        TYPE_anime: 'Anime',
+        TYPE_collections: 'Coleções',
+        TYPE_events: 'Eventos',
+        TYPE_music: 'Música',
+    },
+    'fr-FR': {
+        ADDON_YAMMBO: 'Sélection Yammbo',
+        YAMBO_AND: 'et',
+        YAMBO_ADDON_MANAGED: 'Inclus dans votre forfait',
+        TYPE_anime: 'Anime',
+        TYPE_collections: 'Collections',
+        TYPE_events: 'Événements',
+        TYPE_music: 'Musique',
+    },
+};
+
+const translations = Object.fromEntries(Object.entries(stremioTranslations()).map(([key, value]) => {
+    const translation = Object.assign({}, value);
+    const overrides = yamboTranslationOverrides[key] || yamboTranslationOverrides['en-US'];
+    Object.keys(overrides).forEach((k) => {
+        // Las nuestras siempre mandan. Las TYPE_ solo rellenan huecos: si el
+        // paquete ya trae ese tipo traducido a este idioma, su version es mejor
+        // que la nuestra en ingles.
+        if (k.indexOf('TYPE_') !== 0 || typeof translation[k] !== 'string') {
+            translation[k] = overrides[k];
+        }
+    });
+    return [key, { translation }];
+}));
 
 // Yammbo TV: auto-detectar idioma desde (1) window.YAMBO_USER.locale,
 // (2) navigator.language, fallback 'en-US'. Código usado aquí = BCP-47

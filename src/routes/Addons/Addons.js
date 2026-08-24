@@ -16,6 +16,7 @@ const useAddonDetailsTransportUrl = require('./useAddonDetailsTransportUrl');
 const useSelectableInputs = require('./useSelectableInputs');
 const styles = require('./styles');
 const { AddonPlaceholder } = require('./AddonPlaceholder');
+const { yamboIsManagedAddon } = require('stremio/common/yamboAddons');
 
 const Addons = ({ urlParams, queryParams }) => {
     const { t } = useTranslation();
@@ -70,6 +71,9 @@ const Addons = ({ urlParams, queryParams }) => {
         setSharedAddon(null);
     }, []);
     const onAddonShare = React.useCallback((event) => {
+        if (yamboIsManagedAddon(event.dataset.addon)) {
+            return;
+        }
         setSharedAddon(event.dataset.addon);
     }, []);
     const onAddonInstall = React.useCallback((event) => {
@@ -173,6 +177,8 @@ const Addons = ({ urlParams, queryParams }) => {
                                                     onConfigure={onAddonConfigure}
                                                     onOpen={onAddonOpen}
                                                     onShare={onAddonShare}
+                                                    locked={yamboIsManagedAddon(addon)}
+                                                    shareable={!yamboIsManagedAddon(addon)}
                                                     dataset={{ addon }}
                                                 />
                                             ))
@@ -213,6 +219,8 @@ const Addons = ({ urlParams, queryParams }) => {
                                                         onConfigure={onAddonConfigure}
                                                         onOpen={onAddonOpen}
                                                         onShare={onAddonShare}
+                                                        locked={yamboIsManagedAddon(addon)}
+                                                        shareable={!yamboIsManagedAddon(addon)}
                                                         dataset={{ addon }}
                                                     />
                                                 ))

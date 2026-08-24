@@ -6,10 +6,17 @@ const classnames = require('classnames');
 const { useTranslation } = require('react-i18next');
 const { default: Icon } = require('@stremio/stremio-icons/react');
 const { Button, Image } = require('stremio/components');
+// Directo, no desde el barrel `stremio/common`: esto es un componente hoja y no
+// necesita arrastrar el resto de hooks.
+const useTranslate = require('stremio/common/useTranslate');
 const styles = require('./styles');
 
-const Addon = ({ className, id, name, version, logo, description, types, behaviorHints, installed, onInstall, onUninstall, onConfigure, onOpen, onShare, dataset }) => {
+/** Tipos de contenido reales, los únicos que tiene sentido enseñar al usuario. */
+const YAMBO_DISPLAY_TYPES = ['movie', 'series', 'anime', 'tv', 'channel', 'collections', 'music', 'events', 'other'];
+
+const Addon = ({ className, id, name, version, logo, description, types, behaviorHints, installed, locked, shareable, onInstall, onUninstall, onConfigure, onOpen, onShare, dataset }) => {
     const { t } = useTranslation();
+    const translate = useTranslate();
     const onInstallClick = React.useCallback((event) => {
         event.stopPropagation();
         if (typeof onInstall === 'function') {
@@ -73,6 +80,25 @@ const Addon = ({ className, id, name, version, logo, description, types, behavio
     const renderLogoFallback = React.useCallback(() => (
         <Icon className={styles['icon']} name={'addons'} />
     ), []);
+    // Los tipos venían crudos del manifest y siempre en inglés ("Movie & Series")
+    // aunque el resto de la fila estuviese en español. Las claves de traducción
+    // son minúsculas: TYPE_movie, TYPE_series, TYPE_tv...
+    //
+    // Además se filtran los tipos que no son un tipo de contenido sino el
+    // nombre interno de una fuente del proveedor ("HdHub"): la fila del
+    // complemento premium se leía "Movie, Series, Anime, Tv, Events & HdHub".
+    const typesLabel = React.useMemo(() => {
+        if (!Array.isArray(types) || types.length === 0) {
+            return null;
+        }
+        const known = types.filter((type) => YAMBO_DISPLAY_TYPES.indexOf(String(type).toLowerCase()) !== -1);
+        const shown = known.length > 0 ? known : types;
+        const labels = shown.map((type) => translate.stringWithPrefix(String(type).toLowerCase(), 'TYPE_'));
+        if (labels.length === 1) {
+            return labels[0];
+        }
+        return labels.slice(0, -1).join(', ') + ' ' + t('YAMBO_AND') + ' ' + labels[labels.length - 1];
+    }, [types, translate, t]);
     return (
         <Button className={classnames(className, styles['addon-container'])} onKeyDown={onKeyDown} onClick={onOpenClick}>
             <div className={styles['logo-container']}>
@@ -94,15 +120,8 @@ const Addon = ({ className, id, name, version, logo, description, types, behavio
                         null
                 }
                 {
-                    Array.isArray(types) && types.length > 0 ?
-                        <div className={styles['types-container']}>
-                            {
-                                types.length === 1 ?
-                                    types.join('')
-                                    :
-                                    types.slice(0, -1).join(', ') + ' & ' + types[types.length - 1]
-                            }
-                        </div>
+                    typesLabel !== null ?
+                        <div className={styles['types-container']}>{typesLabel}</div>
                         :
                         null
                 }
@@ -116,29 +135,58 @@ const Addon = ({ className, id, name, version, logo, description, types, behavio
             <div className={styles['buttons-container']}>
                 <div className={styles['action-buttons-container']}>
                     {
-                        !behaviorHints.configurationRequired && behaviorHints.configurable ?
+                        !locked && !behaviorHints.configurationRequired && behaviorHints.configurable ?
                             <Button className={styles['configure-button-container']} title={t('ADDON_CONFIGURE')} tabIndex={-1} onClick={configureButtonOnClick}>
                                 <Icon className={styles['icon']} name={'settings'} />
                             </Button>
                             :
                             null
                     }
-                    <Button
-                        className={installed ? styles['uninstall-button-container'] : styles['install-button-container']}
-                        title={installed ? t('ADDON_UNINSTALL') : behaviorHints.configurationRequired ? t('ADDON_CONFIGURE') : t('ADDON_INSTALL')}
-                        tabIndex={-1}
-                        onClick={installed ? onUninstallClick : behaviorHints.configurationRequired ? configureButtonOnClick : onInstallClick}
-                    >
-                        <div className={styles['label']}>{installed ? t('ADDON_UNINSTALL') : behaviorHints.configurationRequired ? t('ADDON_CONFIGURE') : t('ADDON_INSTALL')}</div>
-                    </Button>
+                    {
+                        /*
+                         * Yammbo TV: los complementos que gestiona el plan no se
+                         * desinstalan a mano. La política los reinstala en el
+                         * siguiente cambio de estado, así que el botón parecía
+                         * roto: lo pulsabas, la fila desaparecía y volvía sola.
+                         */
+                        locked ?
+                            <div className={styles['yambo-managed-label']} title={t('YAMBO_ADDON_MANAGED')}>
+                                {t('YAMBO_ADDON_MANAGED')}
+                            </div>
+                            :
+                            <Button
+                                className={installed ? styles['uninstall-button-container'] : styles['install-button-container']}
+                                title={installed ? t('ADDON_UNINSTALL') : behaviorHints.configurationRequired ? t('ADDON_CONFIGURE') : t('ADDON_INSTALL')}
+                                tabIndex={-1}
+                                onClick={installed ? onUninstallClick : behaviorHints.configurationRequired ? configureButtonOnClick : onInstallClick}
+                            >
+                                <div className={styles['label']}>{installed ? t('ADDON_UNINSTALL') : behaviorHints.configurationRequired ? t('ADDON_CONFIGURE') : t('ADDON_INSTALL')}</div>
+                            </Button>
+                    }
                 </div>
-                <Button className={styles['share-button-container']} title={t('SHARE_ADDON')} tabIndex={-1} onClick={shareButtonOnClick}>
-                    <Icon className={styles['icon']} name={'share'} />
-                    <div className={styles['label']}>{ t('SHARE_ADDON') }</div>
-                </Button>
+                {
+                    /*
+                     * El botón de compartir enseña la transportUrl con botones de
+                     * Facebook, X y Reddit. Para el complemento premium eso es
+                     * repartir un token de esta cuenta con un clic, así que ahí
+                     * no se ofrece.
+                     */
+                    shareable ?
+                        <Button className={styles['share-button-container']} title={t('SHARE_ADDON')} tabIndex={-1} onClick={shareButtonOnClick}>
+                            <Icon className={styles['icon']} name={'share'} />
+                            <div className={styles['label']}>{ t('SHARE_ADDON') }</div>
+                        </Button>
+                        :
+                        null
+                }
             </div>
         </Button>
     );
+};
+
+Addon.defaultProps = {
+    shareable: true,
+    locked: false,
 };
 
 Addon.propTypes = {
@@ -156,6 +204,8 @@ Addon.propTypes = {
         p2p: PropTypes.bool,
     }),
     installed: PropTypes.bool,
+    locked: PropTypes.bool,
+    shareable: PropTypes.bool,
     onToggle: PropTypes.func,
     onInstall: PropTypes.func,
     onUninstall: PropTypes.func,

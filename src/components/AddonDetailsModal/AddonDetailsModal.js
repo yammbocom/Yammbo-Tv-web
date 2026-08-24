@@ -85,7 +85,16 @@ const AddonDetailsModal = ({ transportUrl, onCloseRequest }) => {
             }
             :
             null;
-        const toggleButton = addonDetails.localAddon !== null ?
+        /*
+         * Yammbo TV: "Agregar complemento" acepta cualquier URL, y por ahi se
+         * cuela contenido para adultos dentro de un dominio de pago con
+         * suscripciones a nombre del usuario. Si el manifest se declara adulto
+         * no se ofrece instalarlo; la ficha se sigue viendo.
+         */
+        const isAdult = addonDetails.remoteAddon !== null &&
+            addonDetails.remoteAddon.content.type === 'Ready' &&
+            !!addonDetails.remoteAddon.content.content.manifest.behaviorHints.adult;
+        const toggleButton = isAdult ? null : addonDetails.localAddon !== null ?
             {
                 className: styles['uninstall-button'],
                 label: t('ADDON_UNINSTALL'),

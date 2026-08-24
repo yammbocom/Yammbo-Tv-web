@@ -21,21 +21,88 @@ const styles = require('./styles');
 const RouterWithProtectedRoutes = withCoreSuspender(withProtectedRoutes(Router));
 
 // Yammbo TV: política de addons según suscripción.
-// - Siempre uninstall: YouTube, Public Domain Movies (no son necesarios en nuestro producto)
-// - Premium: uninstall WatchHub (oculta proveedores de compra/alquiler) + install AIOStreams
-// - Free: mantener WatchHub; NO install AIOStreams
-const YAMBO_AIOSTREAMS_URL = 'https://aiostreams.fortheweak.cloud/stremio/fd8676f2-b99a-40cd-ae92-1c51e754d157/eyJpIjoiT2xoaFdJcUFVYW83YnJZTFkzRzVwdz09IiwiZSI6IlQrZDFhTjM3Q1d1TndWTTZDeXphQTNTNHNiZ2ZnUjJ2U2tVMjlQSlV0ZzA9IiwidCI6ImEifQ/manifest.json';
-const YAMBO_AIOSTREAMS_ID = 'aiostreams.viren070.com.fd8676f2-b99';
+//
+// - Siempre uninstall: YouTube, Public Domain Movies (no pintan nada aquí).
+// - Premium: uninstall WatchHub (oculta proveedores de compra/alquiler) e
+//   instala el addon de streams premium.
+// - Free: mantener WatchHub; nada de streams premium.
+// - Siempre install: nuestro addon de catálogo, que es el que declara
+//   `addonCatalogs` y por tanto el que hace aparecer la pestaña "Yammbo" en
+//   /app/#/addons.
+//
+// La URL del addon premium ya NO vive aquí. Estaba escrita en este fichero, o
+// sea que viajaba en el bundle y acababa en el descriptor instalado: el diálogo
+// "Compartir complemento" la enseñaba entera, con botones de Facebook, X y
+// Reddit. Ahora el backend devuelve /aio/{token}/manifest.json, distinta para
+// cada cuenta y revocable.
+const { YAMBO_PREMIUM_ID, YAMBO_CATALOG_ID } = require('stremio/common/yamboAddons');
+
+const YAMBO_CATALOG_URL = (typeof window !== 'undefined' ? window.location.origin : '') + '/manifest.json';
+// Instalaciones de antes del proxy: llevaban la URL del proveedor dentro.
+const YAMBO_LEGACY_PREMIUM = /aiostreams/i;
 const YAMBO_REMOVE_ALWAYS_IDS = ['com.linvo.stremiochannels', 'org.stremio.pubdomainmovies'];
 const YAMBO_REMOVE_PREMIUM_IDS = ['org.stremio.watchhub'];
-
-let yamboAioInstalling = false;
 
 function yamboGetSubscriptionActive() {
     try {
         const yu = (typeof window !== 'undefined') ? window.YAMBO_USER : null;
         return !!(yu && yu.subscription_active);
     } catch (e) { return false; }
+}
+
+// Un dispatch por acción y descriptor, y a otra cosa.
+//
+// La política corre desde dos sitios (el listener de `ctx` y el efecto que
+// reacciona al estado de suscripción). Los dos recibían el mismo array de
+// addons todavía sin refrescar, así que el segundo UninstallAddon caía sobre un
+// addon ya retirado y el core respondía con el toast rojo
+// "AddonUninstalled — Addon is not installed" nada más entrar en la app.
+const yamboDispatched = new Set();
+
+function yamboDispatchOnce(core, action, descriptor) {
+    if (!core || !core.transport || !descriptor) return false;
+    const key = action + '|' + (descriptor.transportUrl || '');
+    if (yamboDispatched.has(key)) return false;
+    yamboDispatched.add(key);
+    // Se suelta a los 10 s: para entonces el estado ya se refrescó, y una acción
+    // legítima posterior (reinstalar tras renovar el plan) vuelve a pasar.
+    setTimeout(() => { yamboDispatched.delete(key); }, 10000);
+    core.transport.dispatch({ action: 'Ctx', args: { action, args: descriptor } });
+    return true;
+}
+
+// La URL tokenizada del addon premium. Se pide una vez y se cachea; el efecto
+// de suscripción la invalida cuando el plan cambia, para no quedarse con un
+// null de cuando el usuario todavía no era premium.
+let yamboPremiumUrlPromise = null;
+
+function yamboPremiumUrl() {
+    if (!yamboPremiumUrlPromise) {
+        yamboPremiumUrlPromise = fetch('/api/app-tv/addon-url', { credentials: 'include' })
+            .then((r) => (r.ok ? r.json() : null))
+            .then((j) => (j && j.active && typeof j.url === 'string' ? j.url : null))
+            .catch(() => null);
+    }
+    return yamboPremiumUrlPromise;
+}
+
+function yamboResetPremiumUrl() {
+    yamboPremiumUrlPromise = null;
+}
+
+function yamboInstallFromUrl(core, url) {
+    if (typeof url !== 'string' || url.length === 0) return;
+    fetch(url, { credentials: 'omit' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((manifest) => {
+            if (!manifest) return;
+            yamboDispatchOnce(core, 'InstallAddon', {
+                manifest: manifest,
+                transportUrl: url,
+                flags: { official: false, protected: false }
+            });
+        })
+        .catch(() => { /* best-effort: sin streams premium, pero la app sigue */ });
 }
 
 function yamboApplyAddonPolicy(core, addons, premiumOverride) {
@@ -46,33 +113,23 @@ function yamboApplyAddonPolicy(core, addons, premiumOverride) {
         : YAMBO_REMOVE_ALWAYS_IDS.slice();
 
     addons.forEach((addon) => {
-        const id = addon && addon.manifest && addon.manifest.id;
-        if (id && toRemoveIds.indexOf(id) !== -1) {
-            core.transport.dispatch({ action: 'Ctx', args: { action: 'UninstallAddon', args: addon } });
+        const id = (addon && addon.manifest && addon.manifest.id) || '';
+        const url = (addon && addon.transportUrl) || '';
+        const legacy = YAMBO_LEGACY_PREMIUM.test(id) || YAMBO_LEGACY_PREMIUM.test(url);
+        if (toRemoveIds.indexOf(id) !== -1 || legacy) {
+            yamboDispatchOnce(core, 'UninstallAddon', addon);
         }
     });
 
-    const hasAio = addons.some((a) => a && a.manifest && a.manifest.id === YAMBO_AIOSTREAMS_ID);
-    if (premium && !hasAio && !yamboAioInstalling) {
-        yamboAioInstalling = true;
-        fetch(YAMBO_AIOSTREAMS_URL, { credentials: 'omit' })
-            .then((r) => r.ok ? r.json() : null)
-            .then((manifest) => {
-                if (!manifest) { yamboAioInstalling = false; return; }
-                const descriptor = {
-                    manifest: manifest,
-                    transportUrl: YAMBO_AIOSTREAMS_URL,
-                    flags: { official: false, protected: false }
-                };
-                core.transport.dispatch({ action: 'Ctx', args: { action: 'InstallAddon', args: descriptor } });
-                setTimeout(() => { yamboAioInstalling = false; }, 5000);
-            })
-            .catch(() => { yamboAioInstalling = false; });
-    } else if (!premium && hasAio) {
-        const aio = addons.find((a) => a && a.manifest && a.manifest.id === YAMBO_AIOSTREAMS_ID);
-        if (aio) {
-            core.transport.dispatch({ action: 'Ctx', args: { action: 'UninstallAddon', args: aio } });
-        }
+    if (!addons.some((a) => a && a.manifest && a.manifest.id === YAMBO_CATALOG_ID)) {
+        yamboInstallFromUrl(core, YAMBO_CATALOG_URL);
+    }
+
+    const premiumAddon = addons.find((a) => a && a.manifest && a.manifest.id === YAMBO_PREMIUM_ID);
+    if (premium && !premiumAddon) {
+        yamboPremiumUrl().then((url) => { yamboInstallFromUrl(core, url); });
+    } else if (!premium && premiumAddon) {
+        yamboDispatchOnce(core, 'UninstallAddon', premiumAddon);
     }
 }
 
@@ -104,6 +161,9 @@ const App = () => {
     React.useEffect(() => {
         if (!initialized || !services.core.active) return;
         const premium = !!(yamboUser && yamboUser.subscription_active);
+        // El plan acaba de cambiar: la URL tokenizada cacheada puede ser de
+        // cuando el usuario todavía no era premium (y por tanto null).
+        yamboResetPremiumUrl();
         services.core.transport.getState('ctx')
             .then((state) => {
                 if (state && state.profile && Array.isArray(state.profile.addons)) {
