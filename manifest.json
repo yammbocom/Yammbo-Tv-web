@@ -1,16 +1,66 @@
 {
+    "id": "/app/",
     "name": "Yammbo Tv",
     "short_name": "Yammbo Tv",
-    "description": "Yammbo \u2014 streaming platform powered by Stremio",
+    "description": "Películas, series y TV en directo. Tu biblioteca y tu progreso, en todos tus dispositivos.",
+    "lang": "es",
+    "dir": "ltr",
+    "categories": [
+        "entertainment",
+        "video"
+    ],
     "background_color": "#000000",
     "theme_color": "#E50914",
     "orientation": "any",
     "display": "standalone",
     "display_override": [
-        "standalone"
+        "window-controls-overlay",
+        "standalone",
+        "minimal-ui"
     ],
     "scope": "./",
     "start_url": "./",
+    "launch_handler": {
+        "client_mode": "focus-existing"
+    },
+    "shortcuts": [
+        {
+            "name": "Mi biblioteca",
+            "short_name": "Biblioteca",
+            "url": "./#/library",
+            "icons": [
+                {
+                    "src": "images/icon_196x196.png",
+                    "sizes": "196x196",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Buscar",
+            "short_name": "Buscar",
+            "url": "./#/search",
+            "icons": [
+                {
+                    "src": "images/icon_196x196.png",
+                    "sizes": "196x196",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Próximos episodios",
+            "short_name": "Calendario",
+            "url": "./#/calendar",
+            "icons": [
+                {
+                    "src": "images/icon_196x196.png",
+                    "sizes": "196x196",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ],
     "icons": [
         {
             "src": "favicons/icon_256x256.ico",
@@ -48,14 +98,14 @@
             "sizes": "1440x900",
             "type": "image/webp",
             "form_factor": "wide",
-            "label": "Homescreen of Stremio"
+            "label": "Inicio de Yammbo Tv"
         },
         {
             "src": "screenshots/board_narrow.webp",
             "sizes": "414x896",
             "type": "image/webp",
             "form_factor": "narrow",
-            "label": "Homescreen of Stremio"
+            "label": "Inicio de Yammbo Tv"
         }
     ]
 }

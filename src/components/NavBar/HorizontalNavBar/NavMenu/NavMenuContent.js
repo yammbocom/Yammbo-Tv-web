@@ -14,7 +14,15 @@ const useTorrent = require('stremio/common/useTorrent');
 const { withCoreSuspender } = require('stremio/common/CoreSuspender');
 const useStreamingServer = require('stremio/common/useStreamingServer');
 const useYamboUser = require('stremio/common/useYamboUser');
+const useInstallPrompt = require('stremio/common/useInstallPrompt');
 const styles = require('./styles');
+
+const YAMBO_INSTALL_LABELS = {
+    en: { label: 'Install app', title: 'Install Yammbo Tv on this device' },
+    es: { label: 'Instalar app', title: 'Instalar Yammbo Tv en este dispositivo' },
+    pt: { label: 'Instalar app', title: 'Instalar o Yammbo Tv neste dispositivo' },
+    fr: { label: 'Installer l\'app', title: 'Installer Yammbo Tv sur cet appareil' },
+};
 
 const YAMBO_PREMIUM_LABELS = {
     en: { upgrade: 'Go Premium', active: 'Premium active', title_upgrade: 'Unlock all streams', title_active: 'Manage subscription' },
@@ -29,6 +37,12 @@ const useYamboPremiumLabels = (i18n) => {
     return YAMBO_PREMIUM_LABELS[short] || YAMBO_PREMIUM_LABELS.en;
 };
 
+const useYamboInstallLabels = (i18n) => {
+    const raw = (i18n && i18n.language) ? i18n.language : 'en';
+    const short = String(raw).split('-')[0].toLowerCase();
+    return YAMBO_INSTALL_LABELS[short] || YAMBO_INSTALL_LABELS.en;
+};
+
 const NavMenuContent = ({ onClick }) => {
     const { t, i18n } = useTranslation();
     const { core } = useServices();
@@ -36,6 +50,8 @@ const NavMenuContent = ({ onClick }) => {
     const yamboUser = useYamboUser();
     const yamboPremium = !!(yamboUser && yamboUser.subscription_active);
     const yamboL = useYamboPremiumLabels(i18n);
+    const yamboInstallL = useYamboInstallLabels(i18n);
+    const { canInstall: yamboCanInstall, promptInstall: yamboPromptInstall } = useInstallPrompt();
     const streamingServer = useStreamingServer();
     const { createTorrentFromMagnet } = useTorrent();
     const [fullscreen, requestFullscreen, exitFullscreen] = useFullscreen();
@@ -112,6 +128,27 @@ const NavMenuContent = ({ onClick }) => {
                                 {yamboPremium ? yamboL.active : yamboL.upgrade}
                             </div>
                         </Button>
+                        {
+                            /*
+                             * Solo aparece cuando el navegador dice que se puede
+                             * instalar: si ya esta instalada, o el navegador no
+                             * lo soporta (Firefox de escritorio, Safari), no hay
+                             * evento y no se pinta nada. Mejor eso que un boton
+                             * que no hace nada al pulsarlo.
+                             */
+                            yamboCanInstall ?
+                                <Button
+                                    className={styles['nav-menu-option-container']}
+                                    title={yamboInstallL.title}
+                                    onClick={yamboPromptInstall}>
+                                    <Icon className={styles['icon']} name={'download'} />
+                                    <div className={styles['nav-menu-option-label']}>
+                                        {yamboInstallL.label}
+                                    </div>
+                                </Button>
+                                :
+                                null
+                        }
                     </div>
                     :
                     null
