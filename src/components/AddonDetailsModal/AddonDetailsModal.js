@@ -148,6 +148,11 @@ const AddonDetailsModal = ({ transportUrl, onCloseRequest }) => {
                 null;
         return configureButton && toggleButton ? [cancelButton, configureButton, toggleButton] : configureButton ? [cancelButton, configureButton] : toggleButton ? [cancelButton, toggleButton] : [cancelButton];
     }, [addonDetails, onCloseRequest]);
+    const yamboAdultBlocked = React.useMemo(() => (
+        addonDetails.remoteAddon !== null &&
+        addonDetails.remoteAddon.content.type === 'Ready' &&
+        !!addonDetails.remoteAddon.content.content.manifest.behaviorHints.adult
+    ), [addonDetails.remoteAddon]);
     const modalBackground = React.useMemo(() => {
         return addonDetails.remoteAddon?.content.type === 'Ready' ? addonDetails.remoteAddon.content.content.manifest.background : null;
     }, [addonDetails.remoteAddon]);
@@ -170,11 +175,26 @@ const AddonDetailsModal = ({ transportUrl, onCloseRequest }) => {
                                 <div>{addonDetails.remoteAddon.content.content.message}</div>
                             </div>
                             :
-                            <AddonDetailsWithRemoteAndLocalAddon
-                                className={styles['addon-details-container']}
-                                remoteAddon={addonDetails.remoteAddon}
-                                localAddon={addonDetails.localAddon}
-                            />
+                            <React.Fragment>
+                                <AddonDetailsWithRemoteAndLocalAddon
+                                    className={styles['addon-details-container']}
+                                    remoteAddon={addonDetails.remoteAddon}
+                                    localAddon={addonDetails.localAddon}
+                                />
+                                {
+                                    /*
+                                     * Sin este aviso el rechazo es mudo: la ficha
+                                     * se ve, no hay boton de instalar y parece que
+                                     * la pantalla esta rota.
+                                     */
+                                    yamboAdultBlocked ?
+                                        <div className={styles['yambo-blocked-notice']}>
+                                            {t('YAMBO_ADDON_ADULT_BLOCKED')}
+                                        </div>
+                                        :
+                                        null
+                                }
+                            </React.Fragment>
             }
         </ModalDialog>
     );

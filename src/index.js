@@ -32,6 +32,7 @@ ensureWhoami();
 // la primera letra de la clave.
 const yamboTranslationOverrides = {
     'en-US': {
+        YAMBO_ADDON_ADULT_BLOCKED: 'This addon declares adult content, so it cannot be installed on Yammbo Tv.',
         ADDON_YAMMBO: 'Yammbo picks',
         YAMBO_AND: 'and',
         YAMBO_ADDON_MANAGED: 'Included in your plan',
@@ -41,6 +42,7 @@ const yamboTranslationOverrides = {
         TYPE_music: 'Music',
     },
     'es-ES': {
+        YAMBO_ADDON_ADULT_BLOCKED: 'Este complemento se declara de contenido para adultos, así que no se puede instalar en Yammbo Tv.',
         ADDON_YAMMBO: 'Selección Yammbo',
         YAMBO_AND: 'y',
         YAMBO_ADDON_MANAGED: 'Incluido en tu plan',
@@ -50,6 +52,7 @@ const yamboTranslationOverrides = {
         TYPE_music: 'Música',
     },
     'pt-BR': {
+        YAMBO_ADDON_ADULT_BLOCKED: 'Este complemento declara conteúdo adulto, portanto não pode ser instalado no Yammbo Tv.',
         ADDON_YAMMBO: 'Seleção Yammbo',
         YAMBO_AND: 'e',
         YAMBO_ADDON_MANAGED: 'Incluído no seu plano',
@@ -59,6 +62,7 @@ const yamboTranslationOverrides = {
         TYPE_music: 'Música',
     },
     'fr-FR': {
+        YAMBO_ADDON_ADULT_BLOCKED: 'Ce module déclare du contenu pour adultes, il ne peut donc pas être installé sur Yammbo Tv.',
         ADDON_YAMMBO: 'Sélection Yammbo',
         YAMBO_AND: 'et',
         YAMBO_ADDON_MANAGED: 'Inclus dans votre forfait',
