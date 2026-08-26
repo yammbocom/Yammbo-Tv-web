@@ -37,6 +37,15 @@ const RouterWithProtectedRoutes = withCoreSuspender(withProtectedRoutes(Router))
 // cada cuenta y revocable.
 const { YAMBO_PREMIUM_ID, YAMBO_CATALOG_ID } = require('stremio/common/yamboAddons');
 
+/*
+ * Yammbo TV: el addon de streams (AIOStreams) esta DESACTIVADO.
+ * Sin un servicio debrid configurado solo devolvia listas vacias, asi que la
+ * web no puede reproducir. En vez de hacer esperar al usuario para acabar en
+ * "no se encontraron transmisiones", no lo instalamos y ofrecemos las apps.
+ * Para reactivarlo: poner esto a true (y configurar debrid en AIOStreams).
+ */
+const YAMBO_AIO_ENABLED = false;
+
 const YAMBO_CATALOG_URL = (typeof window !== 'undefined' ? window.location.origin : '') + '/manifest.json';
 // Instalaciones de antes del proxy: llevaban la URL del proveedor dentro.
 const YAMBO_LEGACY_PREMIUM = /aiostreams/i;
@@ -162,9 +171,9 @@ function yamboApplyAddonPolicy(core, addons, premiumOverride) {
     }
 
     const premiumAddon = addons.find((a) => a && a.manifest && a.manifest.id === YAMBO_PREMIUM_ID);
-    if (premium && !premiumAddon) {
+    if (YAMBO_AIO_ENABLED && premium && !premiumAddon) {
         yamboPremiumUrl().then((url) => { yamboInstallFromUrl(core, url); });
-    } else if (!premium && premiumAddon) {
+    } else if ((!premium || !YAMBO_AIO_ENABLED) && premiumAddon) {
         yamboDispatchOnce(core, 'UninstallAddon', premiumAddon);
     }
 }

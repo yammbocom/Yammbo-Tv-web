@@ -24,7 +24,7 @@ const YAMBO_STREAM_CTA = {
 
 // Yammbo TV: estilos del bloque "Miralo en la app"
 const yamboAppStyles = {
-    wrap: { marginTop: '1.5rem', padding: '1.2rem 1rem', borderRadius: '0.8rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center', maxWidth: '32rem' },
+    wrap: { margin: '0 auto 1rem', padding: '1.2rem 1rem', borderRadius: '0.8rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center', maxWidth: '32rem' },
     title: { fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '0.35rem' },
     subtitle: { fontSize: '0.95rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.45, marginBottom: '1rem' },
     row: { display: 'flex', gap: '0.6rem', justifyContent: 'center', flexWrap: 'wrap' },
@@ -127,6 +127,24 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
 
     return (
         <div className={classnames(className, styles['streams-list-container'])}>
+            {
+                /*
+                 * Yammbo TV: arriba del todo y siempre visible. La web no puede
+                 * reproducir (sin un servicio debrid no hay enlaces HTTP), asi que
+                 * no tiene sentido hacer esperar a que la busqueda acabe en vacio:
+                 * se ofrecen las apps desde el primer momento.
+                 */
+                <div style={yamboAppStyles.wrap}>
+                    <div style={yamboAppStyles.title}>{yamboL.app_title}</div>
+                    <div style={yamboAppStyles.subtitle}>
+                        {yamboPremium ? yamboL.app_sub_premium : yamboL.app_sub_free}
+                    </div>
+                    <div style={yamboAppStyles.row}>
+                        <a href={'https://tv.yammbo.com/apk'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnPrimary}>{yamboL.app_mobile}</a>
+                        <a href={'https://tv.yammbo.com/install'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnGhost}>{yamboL.app_tv}</a>
+                    </div>
+                </div>
+            }
             <div className={styles['select-choices-wrapper']}>
                 {
                     video ?
@@ -189,24 +207,6 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                                         <div style={yamboCtaStyles.activePill}>★ {yamboL.active}</div>
                                         <div style={yamboCtaStyles.quietLine}>{yamboL.not_found}</div>
                                     </div>
-                            }
-                            {
-                                /*
-                                 * Yammbo TV: cuando la web no encuentra streams, el
-                                 * usuario no se queda sin salida — en las apps nativas
-                                 * el contenido si reproduce. Se muestra a todos, con
-                                 * el texto adaptado a si ya paga o no.
-                                 */
-                                <div style={yamboAppStyles.wrap}>
-                                    <div style={yamboAppStyles.title}>{yamboL.app_title}</div>
-                                    <div style={yamboAppStyles.subtitle}>
-                                        {yamboPremium ? yamboL.app_sub_premium : yamboL.app_sub_free}
-                                    </div>
-                                    <div style={yamboAppStyles.row}>
-                                        <a href={'https://tv.yammbo.com/apk'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnPrimary}>{yamboL.app_mobile}</a>
-                                        <a href={'https://tv.yammbo.com/install'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnGhost}>{yamboL.app_tv}</a>
-                                    </div>
-                                </div>
                             }
                         </div>
                         :
