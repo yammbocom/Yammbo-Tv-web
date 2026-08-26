@@ -5,8 +5,8 @@ const PropTypes = require('prop-types');
 const classnames = require('classnames');
 const { useTranslation } = require('react-i18next');
 const { default: Icon } = require('@stremio/stremio-icons/react');
-const { Button, Image, MultiselectMenu } = require('stremio/components');
 const { useServices } = require('stremio/services');
+const { Button, MultiselectMenu } = require('stremio/components');
 const Stream = require('./Stream');
 const styles = require('./styles');
 const { usePlatform, useProfile, useYamboUser } = require('stremio/common');
@@ -177,8 +177,6 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                                 <SeasonEpisodePicker className={styles['search']} onSubmit={handleEpisodePicker} />
                                 : null
                         }
-                        <Image className={styles['image']} src={require('/assets/images/empty.png')} alt={' '} />
-                        <div className={styles['label']}>{t('ERR_NO_ADDONS_FOR_STREAMS')}</div>
                     </div>
                     :
                     props.streams.every((streams) => streams.content.type === 'Err') ?
@@ -193,8 +191,6 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                                     <div className={styles['label']}>{t('UPCOMING')}...</div>
                                     : null
                             }
-                            <Image className={styles['image']} src={require('/assets/images/empty.png')} alt={' '} />
-                            <div className={styles['label']}>{t('NO_STREAM')}</div>
                             {
                                 !yamboPremium ?
                                     <div style={yamboCtaStyles.wrap}>
@@ -205,7 +201,6 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                                     :
                                     <div style={yamboCtaStyles.wrapQuiet}>
                                         <div style={yamboCtaStyles.activePill}>★ {yamboL.active}</div>
-                                        <div style={yamboCtaStyles.quietLine}>{yamboL.not_found}</div>
                                     </div>
                             }
                         </div>
