@@ -16,10 +16,20 @@ const ALL_ADDONS_KEY = 'ALL';
 
 // Yammbo TV: textos del CTA "Hazte Premium" para stream vacío
 const YAMBO_STREAM_CTA = {
-    en: { title: 'Unlock streams with Premium', subtitle: 'Your subscription gives you instant access to community addons.', button: 'Go Premium', active: 'Premium active', not_found: 'No streams found yet — try again in a moment.' },
-    es: { title: 'Desbloquea los streams con Premium', subtitle: 'Con tu suscripción tendrás acceso instantáneo a los addons de la comunidad.', button: 'Hazte Premium', active: 'Premium activo', not_found: 'Aún no encontramos streams — inténtalo en un momento.' },
-    pt: { title: 'Desbloqueie os streams com Premium', subtitle: 'Sua assinatura dá acesso instantâneo aos addons da comunidade.', button: 'Seja Premium', active: 'Premium ativo', not_found: 'Ainda não encontramos streams — tente novamente em instantes.' },
-    fr: { title: 'Débloquez les streams avec Premium', subtitle: 'Votre abonnement donne accès aux addons de la communauté.', button: 'Passer Premium', active: 'Premium actif', not_found: 'Aucun stream pour le moment — réessayez dans un instant.' },
+    en: { title: 'Unlock streams with Premium', subtitle: 'Your subscription gives you instant access to community addons.', button: 'Go Premium', active: 'Premium active', not_found: 'No streams found yet — try again in a moment.', app_title: 'Watch it in the Yammbo Tv app', app_sub_premium: 'Your subscription works there too — streams play normally in the app.', app_sub_free: 'Install the app and try it free for 7 days.', app_mobile: 'Get it for Android', app_tv: 'Get it for TV' },
+    es: { title: 'Desbloquea los streams con Premium', subtitle: 'Con tu suscripción tendrás acceso instantáneo a los addons de la comunidad.', button: 'Hazte Premium', active: 'Premium activo', not_found: 'Aún no encontramos streams — inténtalo en un momento.', app_title: 'Míralo en la app de Yammbo Tv', app_sub_premium: 'Tu suscripción también vale ahí — en la app el contenido sí reproduce.', app_sub_free: 'Instala la app y pruébala gratis 7 días.', app_mobile: 'Descargar para Android', app_tv: 'Descargar para TV' },
+    pt: { title: 'Desbloqueie os streams com Premium', subtitle: 'Sua assinatura dá acesso instantâneo aos addons da comunidade.', button: 'Seja Premium', active: 'Premium ativo', not_found: 'Ainda não encontramos streams — tente novamente em instantes.', app_title: 'Assista no app Yammbo Tv', app_sub_premium: 'Sua assinatura vale lá também — no app o conteúdo reproduz normalmente.', app_sub_free: 'Instale o app e experimente 7 dias grátis.', app_mobile: 'Baixar para Android', app_tv: 'Baixar para TV' },
+    fr: { title: 'Débloquez les streams avec Premium', subtitle: 'Votre abonnement donne accès aux addons de la communauté.', button: 'Passer Premium', active: 'Premium actif', not_found: 'Aucun stream pour le moment — réessayez dans un instant.', app_title: 'Regardez-le dans l\'application Yammbo Tv', app_sub_premium: 'Votre abonnement fonctionne aussi — la lecture marche dans l\'app.', app_sub_free: 'Installez l\'app et essayez 7 jours gratuits.', app_mobile: 'Télécharger pour Android', app_tv: 'Télécharger pour TV' },
+};
+
+// Yammbo TV: estilos del bloque "Miralo en la app"
+const yamboAppStyles = {
+    wrap: { marginTop: '1.5rem', padding: '1.2rem 1rem', borderRadius: '0.8rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center', maxWidth: '32rem' },
+    title: { fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '0.35rem' },
+    subtitle: { fontSize: '0.95rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.45, marginBottom: '1rem' },
+    row: { display: 'flex', gap: '0.6rem', justifyContent: 'center', flexWrap: 'wrap' },
+    btnPrimary: { display: 'inline-block', padding: '0.65rem 1.2rem', borderRadius: '0.5rem', background: '#E50914', color: '#fff', fontWeight: 600, fontSize: '0.95rem', textDecoration: 'none' },
+    btnGhost: { display: 'inline-block', padding: '0.65rem 1.2rem', borderRadius: '0.5rem', background: 'transparent', color: '#fff', fontWeight: 600, fontSize: '0.95rem', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.25)' },
 };
 
 const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
@@ -179,6 +189,24 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                                         <div style={yamboCtaStyles.activePill}>★ {yamboL.active}</div>
                                         <div style={yamboCtaStyles.quietLine}>{yamboL.not_found}</div>
                                     </div>
+                            }
+                            {
+                                /*
+                                 * Yammbo TV: cuando la web no encuentra streams, el
+                                 * usuario no se queda sin salida — en las apps nativas
+                                 * el contenido si reproduce. Se muestra a todos, con
+                                 * el texto adaptado a si ya paga o no.
+                                 */
+                                <div style={yamboAppStyles.wrap}>
+                                    <div style={yamboAppStyles.title}>{yamboL.app_title}</div>
+                                    <div style={yamboAppStyles.subtitle}>
+                                        {yamboPremium ? yamboL.app_sub_premium : yamboL.app_sub_free}
+                                    </div>
+                                    <div style={yamboAppStyles.row}>
+                                        <a href={'https://tv.yammbo.com/apk'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnPrimary}>{yamboL.app_mobile}</a>
+                                        <a href={'https://tv.yammbo.com/install'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnGhost}>{yamboL.app_tv}</a>
+                                    </div>
+                                </div>
                             }
                         </div>
                         :
