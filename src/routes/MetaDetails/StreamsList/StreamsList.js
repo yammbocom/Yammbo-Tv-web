@@ -23,13 +23,22 @@ const YAMBO_STREAM_CTA = {
 };
 
 // Yammbo TV: estilos del bloque "Miralo en la app"
+// Yammbo TV: un solo boton hacia /install, que ya elige la version por dispositivo
+const YAMBO_APP_CTA = {
+    en: { cta: 'Download the app', devices: 'Android · TV · Windows' },
+    es: { cta: 'Descargar la app', devices: 'Android · TV · Windows' },
+    pt: { cta: 'Baixar o app', devices: 'Android · TV · Windows' },
+    fr: { cta: 'Télécharger l\'app', devices: 'Android · TV · Windows' },
+};
+
 const yamboAppStyles = {
     wrap: { margin: '0 auto 1rem', padding: '1.2rem 1rem', borderRadius: '0.8rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center', maxWidth: '32rem' },
     title: { fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '0.35rem' },
     subtitle: { fontSize: '0.95rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.45, marginBottom: '1rem' },
     row: { display: 'flex', gap: '0.6rem', justifyContent: 'center', flexWrap: 'wrap' },
-    btnPrimary: { display: 'inline-block', padding: '0.65rem 1.2rem', borderRadius: '0.5rem', background: '#E50914', color: '#fff', fontWeight: 600, fontSize: '0.95rem', textDecoration: 'none' },
-    btnGhost: { display: 'inline-block', padding: '0.65rem 1.2rem', borderRadius: '0.5rem', background: 'transparent', color: '#fff', fontWeight: 600, fontSize: '0.95rem', textDecoration: 'none', border: '1px solid rgba(255,255,255,0.25)' },
+    btnPrimary: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', minHeight: '3rem', padding: '0.75rem 1.6rem', borderRadius: '0.6rem', background: '#E50914', color: '#fff', fontWeight: 700, fontSize: '1rem', textDecoration: 'none', width: '100%', maxWidth: '20rem' },
+    icon: { width: '1.15rem', height: '1.15rem', flex: '0 0 auto' },
+    devices: { marginTop: '0.6rem', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', letterSpacing: '0.02em' },
 };
 
 const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
@@ -52,6 +61,7 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
         return String(raw).split('-')[0].toLowerCase();
     })();
     const yamboL = YAMBO_STREAM_CTA[yamboLocaleShort] || YAMBO_STREAM_CTA.en;
+    const yamboCta = YAMBO_APP_CTA[yamboLocaleShort] || YAMBO_APP_CTA.en;
     const showInstallAddonsButton = React.useMemo(() => {
         return !profile || profile.auth === null || profile.auth?.user?.isNewUser === true && !video?.upcoming;
     }, [profile, video]);
@@ -140,9 +150,12 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                         {yamboPremium ? yamboL.app_sub_premium : yamboL.app_sub_free}
                     </div>
                     <div style={yamboAppStyles.row}>
-                        <a href={'https://tv.yammbo.com/apk'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnPrimary}>{yamboL.app_mobile}</a>
-                        <a href={'https://tv.yammbo.com/install'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnGhost}>{yamboL.app_tv}</a>
+                        <a href={'https://tv.yammbo.com/install'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnPrimary}>
+                            <svg viewBox={'0 0 24 24'} style={yamboAppStyles.icon} fill={'none'} stroke={'currentColor'} strokeWidth={2} strokeLinecap={'round'} strokeLinejoin={'round'} aria-hidden={'true'}><path d={'M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2'} /></svg>
+                            {yamboCta.cta}
+                        </a>
                     </div>
+                    <div style={yamboAppStyles.devices}>{yamboCta.devices}</div>
                 </div>
             }
             <div className={styles['select-choices-wrapper']}>
