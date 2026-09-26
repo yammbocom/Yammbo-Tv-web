@@ -50,13 +50,13 @@ const SharePrompt = ({ className, url }) => {
     return (
         <div className={classnames(className, styles['share-prompt-container'])}>
             <div className={styles['buttons-container']}>
-                <Button className={classnames(styles['button-container'], styles['facebook-button'])} title={'Facebook'} href={`https://www.facebook.com/sharer/sharer.php?u=${url}`} target={'_blank'}>
+                <Button className={classnames(styles['button-container'], styles['facebook-button'])} title={'Facebook'} href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target={'_blank'}>
                     <Icon className={styles['icon']} name={'facebook'} />
                 </Button>
-                <Button className={classnames(styles['button-container'], styles['x-button'])} title={'X (Twitter)'} href={`https://twitter.com/intent/tweet?text=${url}`} target={'_blank'}>
+                <Button className={classnames(styles['button-container'], styles['x-button'])} title={'X (Twitter)'} href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(url)}`} target={'_blank'}>
                     <Icon className={styles['icon']} name={'x'} />
                 </Button>
-                <Button className={classnames(styles['button-container'], styles['reddit-button'])} title={'Reddit'} href={`https://www.reddit.com/submit?url=${url}`} target={'_blank'}>
+                <Button className={classnames(styles['button-container'], styles['reddit-button'])} title={'Reddit'} href={`https://www.reddit.com/submit?url=${encodeURIComponent(url)}`} target={'_blank'}>
                     <Icon className={styles['icon']} name={'reddit'} />
                 </Button>
             </div>

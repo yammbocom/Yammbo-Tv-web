@@ -28,12 +28,16 @@ const ALLOWED_LINK_REDIRECTS = [
 const MetaPreview = React.forwardRef(({ className, compact, name, logo, background, runtime, releaseInfo, released, description, deepLinks, links, trailerStreams, inLibrary, toggleInLibrary, ratingInfo }, ref) => {
     const { t } = useTranslation();
     const [shareModalOpen, openShareModal, closeShareModal] = useBinaryState(false);
-    // Yammbo TV: share link siempre apunta a tv.yammbo.com (URL de la vista actual)
-    // en vez del shortener strem.io/s/... que devuelve Cinemeta.
+    // Yammbo TV: share link siempre apunta a tv.yammbo.com en vez del shortener
+    // strem.io/s/... que devuelve Cinemeta. Para las fichas se comparte la versión
+    // sin "#" (/app/detail/...): lo que va tras "#" no llega al servidor, así que
+    // WhatsApp/Telegram/Facebook no podían pintar portada ni título.
     const yamboShareHref = React.useMemo(() => {
         if (typeof window === 'undefined') return null;
-        return window.location.href;
-    }, []);
+        const { origin, hash, href } = window.location;
+        const match = /^#\/(detail\/[^?]+)/.exec(hash || '');
+        return match ? `${origin}/app/${match[1]}` : href;
+    }, [name]);
     const linksGroups = React.useMemo(() => {
         const groups = Array.isArray(links) ?
             links
