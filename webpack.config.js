@@ -224,7 +224,13 @@ module.exports = (env, argv) => ({
             new WorkboxPlugin.GenerateSW({
                 maximumFileSizeToCacheInBytes: 20000000,
                 clientsClaim: true,
-                skipWaiting: true
+                skipWaiting: true,
+                // Yammbo Tv: index.html fuera del precache. Si el SW lo sirve, /app/
+                // sale de la copia en disco sin lo que inyecta Laravel (YAMBO_USER
+                // y el guard de YAMBO_BUILD), y un build nuevo tarda varias
+                // recargas en verse. Los dos primeros patrones son los de serie.
+                exclude: [/\.map$/, /^manifest.*\.js$/, /index\.html$/],
+                cleanupOutdatedCaches: true
             }),
         new CopyWebpackPlugin({
             patterns: [
