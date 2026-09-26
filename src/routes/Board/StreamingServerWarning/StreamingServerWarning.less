@@ -3,59 +3,124 @@
 @import (reference) '~@stremio/stremio-colors/less/stremio-colors.less';
 @import (reference) '~stremio/common/screen-sizes.less';
 
+// Yammbo Tv: tarjeta oscura con acento rojo de la marca (antes amarillo, con
+// altura fija que cortaba el texto y botones que se salían en el móvil).
 .warning-container {
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 1rem;
-    background-color: @color-accent5-dark3;
-    border-radius: 0.5rem;
-    box-shadow: 0rem 0.25rem 1rem rgba(0, 0, 0, 0.48), 0rem 0.5rem 3rem rgba(0, 0, 0, 0.64);
+    gap: 1.25rem;
+    padding: 1rem 1.25rem;
+    background-color: #141416;
+    border: 1px solid rgba(229, 9, 20, 0.45);
+    border-left: 4px solid #E50914;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.6);
+    color: #fff;
 
-    .warning-statement {
+    .warning-text {
         flex: 1;
-        font-size: 1.2rem;
-        max-height: 2.4em;
-        color: @color-surface-light5-90;
+        min-width: 0;
+
+        .warning-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .warning-statement {
+            font-size: 0.95rem;
+            line-height: 1.45;
+            color: rgba(255, 255, 255, 0.72);
+        }
     }
 
     .actions {
         display: flex;
-        gap: 1rem;
+        flex: none;
+        align-items: center;
+        gap: 0.5rem;
 
-        .action {
-            flex: none;
-            padding: 0.5rem 1rem;
-            color: @color-surface-light5-90;
-            background-color: rgba(0, 0, 0, 0.24);
-            border-radius: var(--border-radius);
-    
-            &:first-child {
-                margin-left: 0;
-            }
-    
-            .label {
-                font-size: 1.2rem;
-                color: @color-surface-light5-90;
-            }
-    
+        .primary, .secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            min-height: 2.75rem;
+            padding: 0 1.1rem;
+            border-radius: 0.6rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        .primary {
+            background-color: #E50914;
+            color: #fff;
+
             &:hover {
-                .label {
-                    text-decoration: underline;
-                }
+                background-color: #c8070f;
+            }
+
+            .icon {
+                width: 1.1rem;
+                height: 1.1rem;
+                flex: none;
+                fill: none;
+                stroke: currentColor;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+        }
+
+        .secondary {
+            background-color: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: #fff;
+
+            &:hover {
+                background-color: rgba(255, 255, 255, 0.14);
+            }
+        }
+
+        .link {
+            padding: 0.5rem;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.55);
+            white-space: nowrap;
+
+            &:hover {
+                color: #fff;
+                text-decoration: underline;
             }
         }
     }
 }
 
-@media only screen and (max-width: @minimum) {
+// Tablet estrecha y móvil: texto arriba, acciones debajo a todo el ancho.
+@media only screen and (max-width: @xsmall) {
     .warning-container {
         flex-direction: column;
-        text-align: center;
-        padding: 1rem 0.5rem;
+        align-items: stretch;
+        gap: 0.85rem;
+        padding: 1rem;
 
         .actions {
-            justify-content: space-around;
+            flex-wrap: wrap;
+
+            .primary {
+                flex: 1 1 100%;
+            }
+
+            .secondary {
+                flex: 1 1 0;
+            }
+
+            .link {
+                flex: 1 1 0;
+            }
         }
     }
 }
