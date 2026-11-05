@@ -54,3 +54,22 @@ cp patches/YouTubeVideo.yambo-lang.js \
 
 The copy above is the whole patched file, kept in the repo because the edit
 lived only in node_modules and any install would have silently reverted it.
+
+## HLS detection for live TV
+
+File: `patches/getContentType.yambo-hls.js`
+
+This overrides `@stremio/stremio-video/src/HTMLVideo/getContentType.js` so a
+stream whose URL path ends in `.m3u8` is treated as HLS (hls.js) without the
+CORS `HEAD` probe. About 1,500 live TV links answer that `HEAD` with a generic
+content-type or refuse it, and the player then fell back to `<video src>`,
+which Chrome can't play. The data build of `yammbocom/yammbo-iptv`
+(`scripts/build.mjs`, `isM3u8Path`) relies on this: it publishes `.m3u8`
+links without checking the `HEAD`, so the two tests must stay identical.
+
+**How to re-apply after `pnpm install` (which resets node_modules):**
+
+```bash
+cp patches/getContentType.yambo-hls.js \
+   node_modules/@stremio/stremio-video/src/HTMLVideo/getContentType.js
+```
