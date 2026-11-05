@@ -15,7 +15,15 @@ const useFullscreen = () => {
             shell.send('win-set-visibility', { fullscreen: true });
         } else {
             try {
-                await document.documentElement.requestFullscreen();
+                if (typeof document.documentElement.requestFullscreen === 'function') {
+                    await document.documentElement.requestFullscreen();
+                } else {
+                    // Yammbo TV: iOS Safari only supports fullscreen on the <video> element
+                    const video = document.querySelector('video') as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
+                    if (video && typeof video.webkitEnterFullscreen === 'function') {
+                        video.webkitEnterFullscreen();
+                    }
+                }
             } catch (err) {
                 console.error('Error enabling fullscreen', err);
             }

@@ -61,7 +61,7 @@ const Player = ({ urlParams, queryParams }) => {
 
     const [immersed, setImmersed] = React.useState(true);
     const setImmersedDebounced = React.useCallback(debounce(setImmersed, 3000), []);
-    const [, , , toggleFullscreen] = useFullscreen();
+    const [fullscreen, requestFullscreen, exitFullscreen, toggleFullscreen] = useFullscreen();
 
     const [optionsMenuOpen, , closeOptionsMenu, toggleOptionsMenu] = useBinaryState(false);
     const [subtitlesMenuOpen, , closeSubtitlesMenu, toggleSubtitlesMenu] = useBinaryState(false);
@@ -310,6 +310,37 @@ const Player = ({ urlParams, queryParams }) => {
         onPauseRequestedDebounced.cancel();
         toggleFullscreen();
     }, [toggleFullscreen]);
+
+    // Yammbo TV: explicit fullscreen button; on Android lock to landscape like native players
+    const onToggleFullscreen = React.useCallback(async () => {
+        if (fullscreen) {
+            try {
+                window.screen.orientation.unlock();
+            } catch {
+                // orientation API unavailable
+            }
+            exitFullscreen();
+        } else {
+            await requestFullscreen();
+            try {
+                if (document.fullscreenElement && window.screen.orientation && typeof window.screen.orientation.lock === 'function') {
+                    window.screen.orientation.lock('landscape').catch(() => { /* desktop browsers reject the lock */ });
+                }
+            } catch {
+                // orientation API unavailable
+            }
+        }
+    }, [fullscreen, requestFullscreen, exitFullscreen]);
+
+    React.useEffect(() => {
+        if (!fullscreen) {
+            try {
+                window.screen.orientation.unlock();
+            } catch {
+                // orientation API unavailable
+            }
+        }
+    }, [fullscreen]);
 
     const onContainerMouseDown = React.useCallback((event) => {
         if (!event.nativeEvent.optionsMenuClosePrevented) {
@@ -875,6 +906,8 @@ const Player = ({ urlParams, queryParams }) => {
                 nextVideo={player.nextVideo}
                 stream={player.selected !== null ? player.selected.stream : null}
                 statistics={statistics}
+                fullscreen={fullscreen}
+                onToggleFullscreen={onToggleFullscreen}
                 onPlayRequested={onPlayRequested}
                 onPauseRequested={onPauseRequested}
                 onNextVideoRequested={onNextVideoRequested}

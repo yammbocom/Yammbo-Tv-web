@@ -27,6 +27,8 @@ const ControlBar = ({
     nextVideo,
     stream,
     statistics,
+    fullscreen,
+    onToggleFullscreen,
     onPlayRequested,
     onPauseRequested,
     onNextVideoRequested,
@@ -149,6 +151,9 @@ const ControlBar = ({
                         : null
                 }
                 <div className={styles['spacing']} />
+                <Button className={styles['control-bar-button']} title={fullscreen ? t('EXIT_FULLSCREEN') : t('ENTER_FULLSCREEN')} tabIndex={-1} onClick={onToggleFullscreen}>
+                    <Icon className={styles['icon']} name={fullscreen ? 'minimize' : 'maximize'} />
+                </Button>
                 <Button className={styles['control-bar-buttons-menu-button']} onClick={toggleButtonsMenu}>
                     <Icon className={styles['icon']} name={'more-vertical'} />
                 </Button>
@@ -200,6 +205,8 @@ ControlBar.propTypes = {
     nextVideo: PropTypes.object,
     stream: PropTypes.object,
     statistics: PropTypes.object,
+    fullscreen: PropTypes.bool,
+    onToggleFullscreen: PropTypes.func,
     onPlayRequested: PropTypes.func,
     onPauseRequested: PropTypes.func,
     onNextVideoRequested: PropTypes.func,

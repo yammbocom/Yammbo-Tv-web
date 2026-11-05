@@ -5,6 +5,8 @@
 :import('~stremio/components/MetaPreview/styles.less') {
     description-container: description-container;
     action-buttons-container: action-buttons-container;
+    meta-info-container: meta-info-container;
+    logo: logo;
 }
 
 @padding: 1rem;
@@ -71,6 +73,17 @@
                 padding-top: 0;
                 margin-top: 0;
             }
+
+            // Yammbo TV: keep channel logos small inside the drawer (beats the compact and mobile rules)
+            .meta-info-container .logo {
+                width: auto;
+                max-width: 100%;
+                height: auto;
+                max-height: 72px;
+                object-fit: contain;
+                object-position: left center;
+                margin: 0 0 1rem 0;
+            }
         }
     }
 
@@ -81,6 +94,87 @@
 
         .videos {
             overflow-y: auto;
+        }
+    }
+
+    // Yammbo TV: live channel zapping list
+    .live-channels {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 14rem;
+        padding: 0 @padding;
+
+        .live-channels-title {
+            flex: none;
+            padding: 0.5rem 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-foreground-color);
+        }
+
+        .live-channels-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+        }
+
+        .live-channel {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: var(--border-radius);
+            color: var(--primary-foreground-color);
+            text-decoration: none;
+            -webkit-tap-highlight-color: transparent;
+
+            &:hover,
+            &:focus {
+                background-color: var(--overlay-color);
+            }
+
+            .live-channel-logo {
+                flex: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 48px;
+                height: 48px;
+                padding: 6px;
+                box-sizing: border-box;
+                border-radius: 0.3rem;
+                background-color: #141414;
+                color: var(--primary-foreground-color);
+                font-weight: 600;
+                overflow: hidden;
+
+                img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: contain;
+                }
+            }
+
+            .live-channel-info {
+                flex: 1;
+                min-width: 0;
+
+                .live-channel-name,
+                .live-channel-description {
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                }
+
+                .live-channel-description {
+                    margin-top: 0.2rem;
+                    font-size: 0.9rem;
+                    opacity: 0.6;
+                }
+            }
         }
     }
 }
@@ -107,6 +201,10 @@
 
         .info {
             padding: calc(@padding / 2);
+        }
+
+        .live-channels {
+            padding: 0 calc(@padding / 2);
         }
     }
 }

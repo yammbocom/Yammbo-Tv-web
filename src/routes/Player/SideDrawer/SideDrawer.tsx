@@ -1,13 +1,21 @@
 // Copyright (C) 2017-2024 Smart code 203358507
 
-import React, { useMemo, useCallback, useState, forwardRef, memo } from 'react';
+import React, { useMemo, useCallback, useState, useEffect, forwardRef, memo } from 'react';
 import classNames from 'classnames';
+import { useTranslation } from 'react-i18next';
 import Icon from '@stremio/stremio-icons/react';
 import { useServices } from 'stremio/services';
 import { CONSTANTS } from 'stremio/common';
 import { MetaPreview, Video } from 'stremio/components';
 import SeasonsBar from 'stremio/routes/MetaDetails/VideosList/SeasonsBar';
+import { buildLiveChannelPlayerHash, type LiveChannel, type LiveChannelsRelated } from './liveChannelLink';
 import styles from './SideDrawer.less';
+
+// Yammbo TV: heading of the live channel zapping list
+const YAMBO_MORE_CHANNELS: Record<string, string> = {
+    en: 'More channels',
+    es: 'Más canales',
+};
 
 type Props = {
     className?: string;
@@ -20,6 +28,7 @@ type Props = {
 
 const SideDrawer = memo(forwardRef<HTMLDivElement, Props>(({ seriesInfo, className, closeSideDrawer, selected, ...props }: Props, ref) => {
     const { core } = useServices();
+    const { i18n } = useTranslation();
     const [season, setSeason] = useState<number>(seriesInfo?.season);
     const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
 
@@ -74,6 +83,44 @@ const SideDrawer = memo(forwardRef<HTMLDivElement, Props>(({ seriesInfo, classNa
             }
         });
     };
+
+    // Yammbo TV: other channels of the same catalog, to zap from the drawer
+    const liveChannelId = props.metaItem?.id;
+    const [related, setRelated] = useState<LiveChannelsRelated | null>(null);
+    useEffect(() => {
+        setRelated(null);
+        if (typeof liveChannelId !== 'string' || !liveChannelId.startsWith('yiptv:')) {
+            return;
+        }
+        const controller = new AbortController();
+        fetch(`${window.location.origin}/iptv/related/tv/${encodeURIComponent(liveChannelId)}.json`, { signal: controller.signal })
+            .then((response) => response.ok ? response.json() : null)
+            .then((data) => {
+                if (data && data.catalog && Array.isArray(data.channels) && data.channels.length > 0) {
+                    setRelated({ catalog: data.catalog, channels: data.channels });
+                }
+            })
+            .catch(() => { /* ignore: the list is optional */ });
+        return () => controller.abort();
+    }, [liveChannelId]);
+    const yamboLocaleShort = String(i18n?.language || 'en').split('-')[0].toLowerCase();
+    const moreChannelsLabel = YAMBO_MORE_CHANNELS[yamboLocaleShort] || YAMBO_MORE_CHANNELS.en;
+
+    const onLiveChannelClick = useCallback((event: React.MouseEvent<HTMLAnchorElement>, channel: LiveChannel) => {
+        if (typeof window.CompressionStream !== 'function') {
+            return;
+        }
+        event.preventDefault();
+        const fallback = event.currentTarget.href;
+        buildLiveChannelPlayerHash(channel)
+            .then((hash) => {
+                closeSideDrawer();
+                window.location.replace(hash);
+            })
+            .catch(() => {
+                window.location.href = fallback;
+            });
+    }, [closeSideDrawer]);
 
     const onMouseDown = (event: React.MouseEvent) => {
         event.stopPropagation();
@@ -135,7 +182,36 @@ const SideDrawer = memo(forwardRef<HTMLDivElement, Props>(({ seriesInfo, classNa
                     </div>
                     : null
             }
-
+            {
+                !seriesInfo && related ?
+                    <div className={styles['live-channels']}>
+                        <div className={styles['live-channels-title']}>{moreChannelsLabel} · {related.catalog.name}</div>
+                        <div className={styles['live-channels-list']}>
+                            {related.channels.map((channel) => (
+                                <a
+                                    key={channel.id}
+                                    className={styles['live-channel']}
+                                    href={`#/detail/tv/${encodeURIComponent(channel.id)}`}
+                                    onClick={(event) => onLiveChannelClick(event, channel)}
+                                >
+                                    <div className={styles['live-channel-logo']}>
+                                        {
+                                            channel.logo ?
+                                                <img src={channel.logo} alt={''} loading={'lazy'} />
+                                                :
+                                                <span>{String(channel.name || '?').charAt(0).toUpperCase()}</span>
+                                        }
+                                    </div>
+                                    <div className={styles['live-channel-info']}>
+                                        <div className={styles['live-channel-name']}>{channel.name}</div>
+                                        {channel.description ? <div className={styles['live-channel-description']}>{channel.description}</div> : null}
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                    : null
+            }
         </div>
     );
 }));
