@@ -35,7 +35,7 @@ const RouterWithProtectedRoutes = withCoreSuspender(withProtectedRoutes(Router))
 // "Compartir complemento" la enseñaba entera, con botones de Facebook, X y
 // Reddit. Ahora el backend devuelve /aio/{token}/manifest.json, distinta para
 // cada cuenta y revocable.
-const { YAMBO_PREMIUM_ID, YAMBO_CATALOG_ID } = require('stremio/common/yamboAddons');
+const { YAMBO_PREMIUM_ID, YAMBO_CATALOG_ID, YAMBO_IPTV_ID } = require('stremio/common/yamboAddons');
 
 /*
  * Yammbo TV: el addon de streams (AIOStreams) esta DESACTIVADO.
@@ -47,6 +47,7 @@ const { YAMBO_PREMIUM_ID, YAMBO_CATALOG_ID } = require('stremio/common/yamboAddo
 const YAMBO_AIO_ENABLED = false;
 
 const YAMBO_CATALOG_URL = (typeof window !== 'undefined' ? window.location.origin : '') + '/manifest.json';
+const YAMBO_IPTV_URL = (typeof window !== 'undefined' ? window.location.origin : '') + '/iptv/manifest.json';
 // Instalaciones de antes del proxy: llevaban la URL del proveedor dentro.
 const YAMBO_LEGACY_PREMIUM = /aiostreams/i;
 const YAMBO_REMOVE_ALWAYS_IDS = ['com.linvo.stremiochannels', 'org.stremio.pubdomainmovies'];
@@ -100,8 +101,8 @@ function yamboResetPremiumUrl() {
 }
 
 function yamboInstallFromUrl(core, url) {
-    if (typeof url !== 'string' || url.length === 0) return;
-    fetch(url, { credentials: 'omit' })
+    if (typeof url !== 'string' || url.length === 0) return Promise.resolve();
+    return fetch(url, { credentials: 'omit' })
         .then((r) => (r.ok ? r.json() : null))
         .then((manifest) => {
             if (!manifest) return;
@@ -119,16 +120,16 @@ function yamboInstallFromUrl(core, url) {
 // nunca a quien ya lo tiene: seguiría viendo la versión del día que lo instaló.
 // Se compara la versión una vez por sesión; InstallAddon sobre la misma
 // transportUrl reemplaza el descriptor.
-let yamboCatalogChecked = false;
+const yamboRefreshChecked = new Set();
 
-function yamboRefreshCatalogAddon(core, installed) {
-    if (yamboCatalogChecked) return;
-    yamboCatalogChecked = true;
+function yamboRefreshManagedAddon(core, installed, url) {
+    if (yamboRefreshChecked.has(url)) return;
+    yamboRefreshChecked.add(url);
     // `cache: 'no-cache'` revalida contra el servidor. El manifest se sirve con
     // max-age=3600, así que sin esto la comprobación de versión leía la copia
     // del propio navegador y no se enteraba de un despliegue hasta una hora
     // después: una comprobación que casi nunca puede detectar el cambio.
-    fetch(YAMBO_CATALOG_URL, { credentials: 'omit', cache: 'no-cache' })
+    fetch(url, { credentials: 'omit', cache: 'no-cache' })
         .then((r) => (r.ok ? r.json() : null))
         .then((manifest) => {
             if (!manifest || manifest.version === installed.manifest.version) return;
@@ -138,7 +139,7 @@ function yamboRefreshCatalogAddon(core, installed) {
                     action: 'InstallAddon',
                     args: {
                         manifest: manifest,
-                        transportUrl: YAMBO_CATALOG_URL,
+                        transportUrl: url,
                         flags: { official: false, protected: false }
                     }
                 }
@@ -163,11 +164,21 @@ function yamboApplyAddonPolicy(core, addons, premiumOverride) {
         }
     });
 
+    // El catálogo se instala antes que los canales en vivo: el Board pinta las
+    // filas en el orden de instalación, y lanzadas a la vez ganaba la primera
+    // respuesta.
     const catalogAddon = addons.find((a) => a && a.manifest && a.manifest.id === YAMBO_CATALOG_ID);
+    const iptvAddon = addons.find((a) => a && a.manifest && a.manifest.id === YAMBO_IPTV_ID);
+    let catalogReady = Promise.resolve();
     if (!catalogAddon) {
-        yamboInstallFromUrl(core, YAMBO_CATALOG_URL);
+        catalogReady = yamboInstallFromUrl(core, YAMBO_CATALOG_URL);
     } else {
-        yamboRefreshCatalogAddon(core, catalogAddon);
+        yamboRefreshManagedAddon(core, catalogAddon, YAMBO_CATALOG_URL);
+    }
+    if (!iptvAddon) {
+        catalogReady.then(() => yamboInstallFromUrl(core, YAMBO_IPTV_URL));
+    } else {
+        yamboRefreshManagedAddon(core, iptvAddon, YAMBO_IPTV_URL);
     }
 
     const premiumAddon = addons.find((a) => a && a.manifest && a.manifest.id === YAMBO_PREMIUM_ID);
