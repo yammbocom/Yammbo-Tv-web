@@ -63,8 +63,10 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
     const yamboL = YAMBO_STREAM_CTA[yamboLocaleShort] || YAMBO_STREAM_CTA.en;
     const yamboCta = YAMBO_APP_CTA[yamboLocaleShort] || YAMBO_APP_CTA.en;
     const showInstallAddonsButton = React.useMemo(() => {
+        // Yammbo TV: en TV en vivo no se ofrece instalar addons
+        if (type === 'tv') return false;
         return !profile || profile.auth === null || profile.auth?.user?.isNewUser === true && !video?.upcoming;
-    }, [profile, video]);
+    }, [profile, video, type]);
     const backButtonOnClick = React.useCallback(() => {
         if (video.deepLinks && typeof video.deepLinks.metaDetailsVideos === 'string') {
             window.location.replace(video.deepLinks.metaDetailsVideos + (
@@ -143,20 +145,24 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                  * reproducir (sin un servicio debrid no hay enlaces HTTP), asi que
                  * no tiene sentido hacer esperar a que la busqueda acabe en vacio:
                  * se ofrecen las apps desde el primer momento.
+                 * Excepcion: la TV en vivo si reproduce en la web, sin CTA.
                  */
-                <div style={yamboAppStyles.wrap}>
-                    <div style={yamboAppStyles.title}>{yamboL.app_title}</div>
-                    <div style={yamboAppStyles.subtitle}>
-                        {yamboPremium ? yamboL.app_sub_premium : yamboL.app_sub_free}
+                type !== 'tv' ?
+                    <div style={yamboAppStyles.wrap}>
+                        <div style={yamboAppStyles.title}>{yamboL.app_title}</div>
+                        <div style={yamboAppStyles.subtitle}>
+                            {yamboPremium ? yamboL.app_sub_premium : yamboL.app_sub_free}
+                        </div>
+                        <div style={yamboAppStyles.row}>
+                            <a href={'https://tv.yammbo.com/install'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnPrimary}>
+                                <svg viewBox={'0 0 24 24'} style={yamboAppStyles.icon} fill={'none'} stroke={'currentColor'} strokeWidth={2} strokeLinecap={'round'} strokeLinejoin={'round'} aria-hidden={'true'}><path d={'M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2'} /></svg>
+                                {yamboCta.cta}
+                            </a>
+                        </div>
+                        <div style={yamboAppStyles.devices}>{yamboCta.devices}</div>
                     </div>
-                    <div style={yamboAppStyles.row}>
-                        <a href={'https://tv.yammbo.com/install'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnPrimary}>
-                            <svg viewBox={'0 0 24 24'} style={yamboAppStyles.icon} fill={'none'} stroke={'currentColor'} strokeWidth={2} strokeLinecap={'round'} strokeLinejoin={'round'} aria-hidden={'true'}><path d={'M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2'} /></svg>
-                            {yamboCta.cta}
-                        </a>
-                    </div>
-                    <div style={yamboAppStyles.devices}>{yamboCta.devices}</div>
-                </div>
+                    :
+                    null
             }
             <div className={styles['select-choices-wrapper']}>
                 {

@@ -26,12 +26,12 @@ const StreamingServerWarning = ({ className }: Props) => {
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
     const isAndroid = /Android/i.test(ua);
     const isWindows = /Windows/i.test(ua);
-    const title = isEs ? 'Para reproducir, instala la app' : 'Install the app to play';
+    const title = isEs ? 'Para ver películas y series, instala la app' : 'Install the app to watch movies and series';
     const statement = isAndroid
-        ? (isEs ? 'En el navegador no se pueden reproducir películas ni series. Con la app de Yammbo Tv para Android sí, con tu misma cuenta.' : 'Movies and series can\'t play in the browser. The Yammbo Tv Android app plays them, with your same account.')
+        ? (isEs ? 'La TV en vivo se ve aquí; las películas y series necesitan la app de Yammbo Tv para Android, con tu misma cuenta.' : 'Live TV plays right here; movies and series need the Yammbo Tv Android app, with your same account.')
         : isWindows
             ? (isEs ? 'Instala Yammbo TV Service en tu PC: es gratis y tarda un minuto. Después podrás reproducir aquí mismo.' : 'Install Yammbo TV Service on your PC: it is free and takes a minute. Then you can play right here.')
-            : (isEs ? 'En el navegador no se pueden reproducir películas ni series. Instala la app en tu teléfono Android, tu TV o tu PC con Windows.' : 'Movies and series can\'t play in the browser. Install the app on your Android phone, your TV or your Windows PC.');
+            : (isEs ? 'La TV en vivo se ve aquí; para películas y series instala la app en tu teléfono Android, tu TV o tu PC con Windows.' : 'Live TV plays right here; for movies and series install the app on your Android phone, your TV or your Windows PC.');
     const installHref = 'https://tv.yammbo.com/install' + (isAndroid ? '#movil' : isWindows ? '#windows' : '');
     const installLabel = isAndroid
         ? (isEs ? 'Descargar la app' : 'Get the app')

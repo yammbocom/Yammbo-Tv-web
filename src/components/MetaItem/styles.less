@@ -71,6 +71,15 @@
         }
     }
 
+    // Yammbo TV: live channel logos are wide/transparent; show them whole.
+    &:global(.meta-type-tv) .poster-container { background-color: #141414; }
+    &:global(.meta-type-tv) .poster-container .poster-image-layer .poster-image {
+        object-fit: contain;
+        padding: 14%;
+        box-sizing: border-box;
+        opacity: 1;
+    }
+
     .poster-container {
         position: relative;
         z-index: 0;

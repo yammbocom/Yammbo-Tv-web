@@ -62,7 +62,7 @@ const MetaItem = React.memo(({ className, type, name, poster, posterShape, poste
         <Icon className={styles['icon']} name={'more-vertical'} />
     ), []);
     return (
-        <Button title={name} href={href} {...filterInvalidDOMProps(props)} className={classnames(className, styles['meta-item-container'], styles['poster-shape-poster'], styles[`poster-shape-${posterShape}`], { 'active': menuOpen })} onClick={metaItemOnClick}>
+        <Button title={name} href={href} {...filterInvalidDOMProps(props)} className={classnames(className, styles['meta-item-container'], styles['poster-shape-poster'], styles[`poster-shape-${posterShape}`], { 'active': menuOpen, 'meta-type-tv': type === 'tv' })} onClick={metaItemOnClick}>
             <div className={classnames(styles['poster-container'], { 'poster-change-cursor': posterChangeCursor })}>
                 {
                     onDismissClick ?
