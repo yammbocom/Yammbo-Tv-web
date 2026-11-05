@@ -70,6 +70,13 @@ const Player = ({ urlParams, queryParams }) => {
     const [statisticsMenuOpen, , closeStatisticsMenu, toggleStatisticsMenu] = useBinaryState(false);
     const [nextVideoPopupOpen, openNextVideoPopup, closeNextVideoPopup] = useBinaryState(false);
     const [sideDrawerOpen, , closeSideDrawer, toggleSideDrawer] = useBinaryState(false);
+    // Yammbo TV: the drawer is still sliding out when the core starts loading the
+    // next item (zapping between live channels), and metaItem.content is undefined
+    // until it is Ready. Hand the drawer the last ready meta so it cannot crash.
+    const sideDrawerMetaItemRef = React.useRef(null);
+    if (player.metaItem?.type === 'Ready') {
+        sideDrawerMetaItemRef.current = player.metaItem.content;
+    }
 
     const menusOpen = React.useMemo(() => {
         return optionsMenuOpen || subtitlesMenuOpen || audioMenuOpen || speedMenuOpen || statisticsMenuOpen || sideDrawerOpen;
@@ -951,10 +958,10 @@ const Player = ({ urlParams, queryParams }) => {
                     :
                     null
             }
-            <Transition when={sideDrawerOpen} name={'slide-left'}>
+            <Transition when={sideDrawerOpen && sideDrawerMetaItemRef.current !== null} name={'slide-left'}>
                 <SideDrawer
                     className={classnames(styles['layer'], styles['side-drawer-layer'])}
-                    metaItem={player.metaItem?.content}
+                    metaItem={sideDrawerMetaItemRef.current}
                     seriesInfo={player.seriesInfo}
                     closeSideDrawer={closeSideDrawer}
                     selected={player.selected?.streamRequest?.path.id}
