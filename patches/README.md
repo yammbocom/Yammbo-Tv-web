@@ -59,11 +59,13 @@ lived only in node_modules and any install would have silently reverted it.
 
 File: `patches/getContentType.yambo-hls.js`
 
-This overrides `@stremio/stremio-video/src/HTMLVideo/getContentType.js` so a
-stream whose URL path ends in `.m3u8` is treated as HLS (hls.js) without the
-CORS `HEAD` probe. About 1,500 live TV links answer that `HEAD` with a generic
-content-type or refuse it, and the player then fell back to `<video src>`,
-which Chrome can't play. The data build of `yammbocom/yammbo-iptv`
+This overrides `@stremio/stremio-video/src/HTMLVideo/getContentType.js` so, in
+browsers WITHOUT native HLS (Firefox, older Chrome), a stream whose URL path
+ends in `.m3u8` is treated as HLS (hls.js) without the CORS `HEAD` probe. About
+1,500 live TV links answer that `HEAD` with a generic content-type or refuse
+it, and the player then fell back to `<video src>`, which only plays HLS where
+the browser supports it natively. Browsers with native HLS keep the original
+`HEAD` path: hls.js needs CORS, the native fallback does not. The data build of `yammbocom/yammbo-iptv`
 (`scripts/build.mjs`, `isM3u8Path`) relies on this: it publishes `.m3u8`
 links without checking the `HEAD`, so the two tests must stay identical.
 
