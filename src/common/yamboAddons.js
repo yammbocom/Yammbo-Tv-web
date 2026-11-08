@@ -8,7 +8,10 @@ const YAMBO_CATALOG_ID = 'com.yammbo.tv';
 // Canales en vivo (Worker yammbo-iptv en /iptv/*, lista de iptv-org filtrada a
 // lo que el navegador puede reproducir). Gratis para todos.
 const YAMBO_IPTV_ID = 'com.yammbo.iptv';
-const YAMBO_MANAGED_IDS = [YAMBO_PREMIUM_ID, YAMBO_CATALOG_ID, YAMBO_IPTV_ID];
+// Catálogo CO-MX: películas y series de Cuevana / Pelispedia / Pelisjuanita,
+// servido por el backend en /comx/*. Metadatos TMDB + enlaces de reproducción.
+const YAMBO_COMX_ID = 'com.yammbo.comx';
+const YAMBO_MANAGED_IDS = [YAMBO_PREMIUM_ID, YAMBO_CATALOG_ID, YAMBO_IPTV_ID, YAMBO_COMX_ID];
 
 // Id del catálogo curado propio, tal y como lo declara nuestro manifest en
 // `addonCatalogs`. Se usa para quedarnos sólo con él en el selector.
@@ -31,6 +34,7 @@ module.exports = {
     YAMBO_PREMIUM_ID,
     YAMBO_CATALOG_ID,
     YAMBO_IPTV_ID,
+    YAMBO_COMX_ID,
     YAMBO_CATALOG_SELECT_ID,
     YAMBO_MANAGED_IDS,
     yamboIsManagedAddon,

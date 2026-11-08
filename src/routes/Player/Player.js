@@ -41,6 +41,16 @@ const Player = ({ urlParams, queryParams }) => {
     }, [queryParams]);
     const profile = useProfile();
     const [player, videoParamsChanged, streamStateChanged, timeChanged, seek, pausedChanged, ended, nextVideo] = usePlayer(urlParams);
+    // Yammbo TV: los streams CO-MX van con externalUrl (el embed del hoster) y se
+    // montan en un iframe, porque el hoster sólo acepta IP residencial, no la del VPS.
+    // CO-MX es el único addon que devuelve externalUrl, así que su presencia es la señal.
+    const yammboEmbedUrl = (() => {
+        const stream = player && player.selected ? player.selected.stream : null;
+        if (stream && typeof stream.externalUrl === 'string' && stream.externalUrl.length > 0) {
+            return stream.externalUrl;
+        }
+        return null;
+    })();
     const [settings] = useSettings();
     const streamingServer = useStreamingServer();
     const statistics = useStatistics(player, streamingServer);
@@ -395,7 +405,7 @@ const Player = ({ urlParams, queryParams }) => {
         setError(null);
         video.unload();
 
-        if (player.selected && player.stream?.type === 'Ready' && streamingServer.settings?.type !== 'Loading') {
+        if (!yammboEmbedUrl && player.selected && player.stream?.type === 'Ready' && streamingServer.settings?.type !== 'Loading') {
             video.load({
                 stream: {
                     ...player.stream.content,
@@ -434,7 +444,7 @@ const Player = ({ urlParams, queryParams }) => {
                 shellTransport: services.shell.active ? services.shell.transport : null,
             });
         }
-    }, [streamingServer.baseUrl, player.selected, player.stream, forceTranscoding, casting]);
+    }, [streamingServer.baseUrl, player.selected, player.stream, forceTranscoding, casting, yammboEmbedUrl]);
     React.useEffect(() => {
         if (video.state.stream !== null) {
             const tracks = player.subtitles.map((subtitles) => ({
@@ -822,14 +832,26 @@ const Player = ({ urlParams, queryParams }) => {
             onMouseMove={onContainerMouseMove}
             onMouseOver={onContainerMouseMove}
             onMouseLeave={onContainerMouseLeave}>
-            <Video
-                ref={video.containerRef}
-                className={styles['layer']}
-                onClick={onVideoClick}
-                onDoubleClick={onVideoDoubleClick}
-            />
             {
-                !video.state.loaded ?
+                yammboEmbedUrl ?
+                    <iframe
+                        className={styles['layer']}
+                        src={yammboEmbedUrl}
+                        style={{ border: 'none' }}
+                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                        allowFullScreen
+                        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                    />
+                    :
+                    <Video
+                        ref={video.containerRef}
+                        className={styles['layer']}
+                        onClick={onVideoClick}
+                        onDoubleClick={onVideoDoubleClick}
+                    />
+            }
+            {
+                !video.state.loaded && !yammboEmbedUrl ?
                     <div className={classnames(styles['layer'], styles['background-layer'])}>
                         <img className={styles['image']} src={player?.metaItem?.content?.background} />
                     </div>
@@ -837,7 +859,7 @@ const Player = ({ urlParams, queryParams }) => {
                     null
             }
             {
-                (video.state.buffering || !video.state.loaded) && !error ?
+                (video.state.buffering || !video.state.loaded) && !error && !yammboEmbedUrl ?
                     <BufferingLoader
                         ref={bufferingRef}
                         className={classnames(styles['layer'], styles['buffering-layer'])}

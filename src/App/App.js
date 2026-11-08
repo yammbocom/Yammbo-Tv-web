@@ -35,7 +35,7 @@ const RouterWithProtectedRoutes = withCoreSuspender(withProtectedRoutes(Router))
 // "Compartir complemento" la enseñaba entera, con botones de Facebook, X y
 // Reddit. Ahora el backend devuelve /aio/{token}/manifest.json, distinta para
 // cada cuenta y revocable.
-const { YAMBO_PREMIUM_ID, YAMBO_CATALOG_ID, YAMBO_IPTV_ID } = require('stremio/common/yamboAddons');
+const { YAMBO_PREMIUM_ID, YAMBO_CATALOG_ID, YAMBO_IPTV_ID, YAMBO_COMX_ID } = require('stremio/common/yamboAddons');
 
 /*
  * Yammbo TV: el addon de streams (AIOStreams) esta DESACTIVADO.
@@ -48,6 +48,8 @@ const YAMBO_AIO_ENABLED = false;
 
 const YAMBO_CATALOG_URL = (typeof window !== 'undefined' ? window.location.origin : '') + '/manifest.json';
 const YAMBO_IPTV_URL = (typeof window !== 'undefined' ? window.location.origin : '') + '/iptv/manifest.json';
+// Catálogo CO-MX (Cuevana / Pelispedia / Pelisjuanita), servido por el backend.
+const YAMBO_COMX_URL = (typeof window !== 'undefined' ? window.location.origin : '') + '/comx/manifest.json';
 // Instalaciones de antes del proxy: llevaban la URL del proveedor dentro.
 const YAMBO_LEGACY_PREMIUM = /aiostreams/i;
 const YAMBO_REMOVE_ALWAYS_IDS = ['com.linvo.stremiochannels', 'org.stremio.pubdomainmovies'];
@@ -169,6 +171,7 @@ function yamboApplyAddonPolicy(core, addons, premiumOverride) {
     // respuesta.
     const catalogAddon = addons.find((a) => a && a.manifest && a.manifest.id === YAMBO_CATALOG_ID);
     const iptvAddon = addons.find((a) => a && a.manifest && a.manifest.id === YAMBO_IPTV_ID);
+    const comxAddon = addons.find((a) => a && a.manifest && a.manifest.id === YAMBO_COMX_ID);
     let catalogReady = Promise.resolve();
     if (!catalogAddon) {
         catalogReady = yamboInstallFromUrl(core, YAMBO_CATALOG_URL);
@@ -179,6 +182,11 @@ function yamboApplyAddonPolicy(core, addons, premiumOverride) {
         catalogReady.then(() => yamboInstallFromUrl(core, YAMBO_IPTV_URL));
     } else {
         yamboRefreshManagedAddon(core, iptvAddon, YAMBO_IPTV_URL);
+    }
+    if (!comxAddon) {
+        catalogReady.then(() => yamboInstallFromUrl(core, YAMBO_COMX_URL));
+    } else {
+        yamboRefreshManagedAddon(core, comxAddon, YAMBO_COMX_URL);
     }
 
     const premiumAddon = addons.find((a) => a && a.manifest && a.manifest.id === YAMBO_PREMIUM_ID);
