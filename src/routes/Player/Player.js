@@ -838,7 +838,7 @@ const Player = ({ urlParams, queryParams }) => {
                         className={styles['layer']}
                         src={yammboEmbedUrl}
                         style={{ border: 'none' }}
-                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                        sandbox="allow-scripts allow-same-origin allow-forms"
                         allowFullScreen
                         allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                     />
