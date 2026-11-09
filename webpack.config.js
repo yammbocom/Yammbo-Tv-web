@@ -12,7 +12,10 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const packageJson = require('./package.json');
 
-const COMMIT_HASH = execSync('git rev-parse HEAD').toString().trim();
+// BUILD_HASH: a fresh folder name per deploy even when HEAD has not moved yet
+// (the publish broker builds before it commits). Same folder = stale service worker.
+const COMMIT_HASH = process.env.BUILD_HASH || execSync('git rev-parse HEAD').toString().trim();
+if (!/^[0-9a-f]{40}$/.test(COMMIT_HASH)) throw new Error('BUILD_HASH must be 40 hex chars');
 
 const THREAD_LOADER = {
     loader: 'thread-loader',
