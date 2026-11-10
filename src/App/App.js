@@ -50,7 +50,10 @@ const YAMBO_CATALOG_URL = (typeof window !== 'undefined' ? window.location.origi
 const YAMBO_IPTV_URL = (typeof window !== 'undefined' ? window.location.origin : '') + '/iptv/manifest.json';
 // Instalaciones de antes del proxy: llevaban la URL del proveedor dentro.
 const YAMBO_LEGACY_PREMIUM = /aiostreams/i;
-const YAMBO_REMOVE_ALWAYS_IDS = ['com.linvo.stremiochannels', 'org.stremio.pubdomainmovies', 'com.yammbo.comx'];
+// Cinemeta muestra catálogos de TMDB (tt) que en la web no tienen fuentes de
+// reproducción (el premium está desactivado), así que solo duplica portadas
+// sin enlaces. Se quita y queda el contenido de CO-MX.
+const YAMBO_REMOVE_ALWAYS_IDS = ['com.linvo.stremiochannels', 'org.stremio.pubdomainmovies', 'com.yammbo.comx', 'com.linvo.cinemeta'];
 const YAMBO_REMOVE_PREMIUM_IDS = ['org.stremio.watchhub'];
 
 function yamboGetSubscriptionActive() {
