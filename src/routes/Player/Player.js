@@ -41,15 +41,23 @@ const Player = ({ urlParams, queryParams }) => {
     }, [queryParams]);
     const profile = useProfile();
     const [player, videoParamsChanged, streamStateChanged, timeChanged, seek, pausedChanged, ended, nextVideo] = usePlayer(urlParams);
-    // Yammbo TV: los streams CO-MX van con externalUrl (el embed del hoster) y se
-    // montan en un iframe, porque el hoster sólo acepta IP residencial, no la del VPS.
-    // CO-MX es el único addon que devuelve externalUrl, así que su presencia es la señal.
+    // Yammbo TV: los streams CO-MX llevan la página embed en `url` (nunca vídeo
+    // directo: el hoster sólo acepta IP residencial, no la del VPS) y se montan
+    // en un iframe. El hint `yammboEmbed` puede no llegar (el core descarta
+    // campos desconocidos), así que además se detecta que la url no sea un vídeo
+    // directo (.m3u8/.mp4...): en esta app las únicas url no-vídeo son las de CO-MX.
     const yammboEmbedUrl = (() => {
         const stream = player && player.selected ? player.selected.stream : null;
-        if (stream && typeof stream.externalUrl === 'string' && stream.externalUrl.length > 0) {
-            return stream.externalUrl;
+        if (!stream) {
+            return null;
         }
-        return null;
+        const url = typeof stream.url === 'string' ? stream.url : '';
+        if (url.length === 0) {
+            return null;
+        }
+        const hinted = stream.behaviorHints && stream.behaviorHints.yammboEmbed === true;
+        const notVideo = !/\.(m3u8|mp4|mkv|webm|ts|mov|avi|flv)([?#]|$)/i.test(url);
+        return (hinted || notVideo) ? url : null;
     })();
     const [settings] = useSettings();
     const streamingServer = useStreamingServer();
