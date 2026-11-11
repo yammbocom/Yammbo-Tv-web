@@ -1,6 +1,7 @@
 // Copyright (C) 2017-2023 Smart code 203358507
 
 const React = require('react');
+const { replaceHash } = require('stremio/common/yamboHistory');
 const { useTranslate } = require('stremio/common');
 
 const mapSelectableInputs = (discover, t) => {
@@ -18,7 +19,7 @@ const mapSelectableInputs = (discover, t) => {
             ? () => t.stringWithPrefix(discover.selected.request.path.type, 'TYPE_')
             : t.string('SELECT_TYPE'),
         onSelect: (value) => {
-            window.location = value;
+            replaceHash(value);
         }
     };
     const catalogSelect = {
@@ -40,7 +41,7 @@ const mapSelectableInputs = (discover, t) => {
             :
             t.string('SELECT_CATALOG'),
         onSelect: (value) => {
-            window.location =value;
+            replaceHash(value);
         }
     };
     const extraSelects = discover.selectable.extra.map(({ name, isRequired, options }) => {
@@ -63,7 +64,7 @@ const mapSelectableInputs = (discover, t) => {
                 : t.string(selectedExtra.value),
             onSelect: (value) => {
                 const { href } = JSON.parse(value);
-                window.location = href;
+                replaceHash(href);
             }
         };
     });

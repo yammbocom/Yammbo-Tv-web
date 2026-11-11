@@ -1,6 +1,7 @@
 // Copyright (C) 2017-2023 Smart code 203358507
 
 const React = require('react');
+const { replaceHash } = require('stremio/common/yamboHistory');
 const { useTranslate } = require('stremio/common');
 const { YAMBO_CATALOG_SELECT_ID } = require('stremio/common/yamboAddons');
 
@@ -43,7 +44,7 @@ const mapSelectableInputs = (installedAddons, remoteAddons, t) => {
             }
             : null,
         onSelect: (value) => {
-            window.location = value;
+            replaceHash(value);
         }
     };
 
@@ -84,7 +85,7 @@ const mapSelectableInputs = (installedAddons, remoteAddons, t) => {
                     t.string('SELECT_TYPE');
         },
         onSelect: (value) => {
-            window.location = value;
+            replaceHash(value);
         }
     };
 

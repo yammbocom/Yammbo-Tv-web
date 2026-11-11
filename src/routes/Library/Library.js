@@ -1,6 +1,7 @@
 // Copyright (C) 2017-2023 Smart code 203358507
 
 const React = require('react');
+const { replaceHash } = require('stremio/common/yamboHistory');
 const { useTranslation } = require('react-i18next');
 const PropTypes = require('prop-types');
 const classnames = require('classnames');
@@ -67,7 +68,7 @@ const Library = ({ model, urlParams, queryParams }) => {
     }, [profile.auth, library.selected]);
     React.useEffect(() => {
         if (!library.selected?.type && typeSelect.value) {
-            window.location = typeSelect.value;
+            replaceHash(typeSelect.value);
         }
     }, [typeSelect.value, library.selected]);
     return (

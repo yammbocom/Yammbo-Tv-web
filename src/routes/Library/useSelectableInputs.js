@@ -1,6 +1,7 @@
 // Copyright (C) 2017-2023 Smart code 203358507
 
 const React = require('react');
+const { replaceHash } = require('stremio/common/yamboHistory');
 const { useTranslate } = require('stremio/common');
 const mapSelectableInputs = (library, t) => {
     const selectedType = library.selectable.types.find(({ selected }) => selected) || library.selectable.types.find(({ type }) => type === null);
@@ -12,7 +13,7 @@ const mapSelectableInputs = (library, t) => {
             })),
         value: selectedType?.deepLinks.library,
         onSelect: (value) => {
-            window.location = value;
+            replaceHash(value);
         }
     };
     const sortChips = {
@@ -25,7 +26,7 @@ const mapSelectableInputs = (library, t) => {
             .filter(({ selected }) => selected)
             .map(({ deepLinks }) => deepLinks.library),
         onSelect: (value) => {
-            window.location = value;
+            replaceHash(value);
         }
     };
     return [typeSelect, sortChips, library.selectable.nextPage];

@@ -15,6 +15,7 @@ const useSearchHistory = require('./useSearchHistory');
 const useLocalSearch = require('./useLocalSearch');
 const styles = require('./styles');
 const useBinaryState = require('stremio/common/useBinaryState');
+const { replaceHash } = require('stremio/common/yamboHistory');
 
 const SearchBar = React.memo(({ className, query, active }) => {
     const { t } = useTranslation();
@@ -64,15 +65,21 @@ const SearchBar = React.memo(({ className, query, active }) => {
         const searchValue = `/search?search=${encodeURIComponent(event.target.value)}`;
         setCurrentQuery(searchValue);
         if (searchInputRef.current && searchValue) {
-            window.location.hash = searchValue;
+            // Yammbo TV: otra búsqueda desde la página de búsqueda reemplaza la
+            // anterior en vez de apilarse.
+            if (active) {
+                replaceHash(`#${searchValue}`);
+            } else {
+                window.location.hash = searchValue;
+            }
             closeHistory();
         }
-    }, []);
+    }, [active]);
 
     const queryInputClear = React.useCallback(() => {
         searchInputRef.current.value = '';
         setCurrentQuery('');
-        window.location.hash = '/search';
+        replaceHash('#/search');
     }, []);
 
     const updateLocalSearchDebounced = React.useCallback(debounce((query) => {
