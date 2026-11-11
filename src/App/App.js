@@ -36,6 +36,8 @@ const RouterWithProtectedRoutes = withCoreSuspender(withProtectedRoutes(Router))
 // Reddit. Ahora el backend devuelve /aio/{token}/manifest.json, distinta para
 // cada cuenta y revocable.
 const { YAMBO_PREMIUM_ID, YAMBO_CATALOG_ID, YAMBO_IPTV_ID } = require('stremio/common/yamboAddons');
+// Instala el marcador de entradas del historial (botón atrás) desde el arranque.
+require('stremio/common/yamboHistory');
 
 /*
  * Yammbo TV: el addon de streams (AIOStreams) esta DESACTIVADO.
@@ -163,7 +165,18 @@ function yamboApplyAddonPolicy(core, addons, premiumOverride) {
         const url = (addon && addon.transportUrl) || '';
         const legacy = YAMBO_LEGACY_PREMIUM.test(id) || YAMBO_LEGACY_PREMIUM.test(url);
         if (toRemoveIds.indexOf(id) !== -1 || legacy) {
-            yamboDispatchOnce(core, 'UninstallAddon', addon);
+            // Cinemeta viene marcado `protected` en el perfil por defecto y el
+            // core rechaza su UninstallAddon (AddonIsProtected) sin avisar. Se
+            // reinstala el mismo descriptor sin la marca y se desinstala justo
+            // después: el core procesa las acciones en orden.
+            let target = addon;
+            if (addon.flags && addon.flags.protected) {
+                target = Object.assign({}, addon, {
+                    flags: Object.assign({}, addon.flags, { protected: false })
+                });
+                yamboDispatchOnce(core, 'InstallAddon', target);
+            }
+            yamboDispatchOnce(core, 'UninstallAddon', target);
         }
     });
 
