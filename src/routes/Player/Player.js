@@ -925,14 +925,19 @@ const Player = ({ urlParams, queryParams }) => {
                     selectedExtraSubtitlesTrackId={video.state.selectedExtraSubtitlesTrackId}
                 />
             </ContextMenu>
-            <HorizontalNavBar
-                className={classnames(styles['layer'], styles['nav-bar-layer'])}
-                title={player.title !== null ? player.title : ''}
-                backButton={true}
-                fullscreenButton={true}
-                onMouseMove={onBarMouseMove}
-                onMouseOver={onBarMouseMove}
-            />
+            {
+                !yammboEmbedUrl ?
+                    <HorizontalNavBar
+                        className={classnames(styles['layer'], styles['nav-bar-layer'])}
+                        title={player.title !== null ? player.title : ''}
+                        backButton={true}
+                        fullscreenButton={true}
+                        onMouseMove={onBarMouseMove}
+                        onMouseOver={onBarMouseMove}
+                    />
+                    :
+                    null
+            }
             {
                 player.metaItem?.type === 'Ready' ?
                     <SideDrawerButton
