@@ -25,14 +25,14 @@ const YAMBO_STREAM_CTA = {
 // Yammbo TV: estilos del bloque "Miralo en la app"
 // Yammbo TV: un solo boton hacia /install, que ya elige la version por dispositivo
 const YAMBO_APP_CTA = {
-    en: { cta: 'Download the app', devices: 'Android · TV · Windows' },
-    es: { cta: 'Descargar la app', devices: 'Android · TV · Windows' },
-    pt: { cta: 'Baixar o app', devices: 'Android · TV · Windows' },
-    fr: { cta: 'Télécharger l\'app', devices: 'Android · TV · Windows' },
+    en: { cta: 'Download the app', devices: 'Android · TV · Windows', watch: 'Watch now', watch_here: 'Plays right here', season: 'Season', episode: 'Episode' },
+    es: { cta: 'Descargar la app', devices: 'Android · TV · Windows', watch: 'Ver ahora', watch_here: 'Se reproduce aquí mismo', season: 'Temporada', episode: 'Episodio' },
+    pt: { cta: 'Baixar o app', devices: 'Android · TV · Windows', watch: 'Assistir agora', watch_here: 'Reproduz aqui mesmo', season: 'Temporada', episode: 'Episódio' },
+    fr: { cta: 'Télécharger l\'app', devices: 'Android · TV · Windows', watch: 'Regarder', watch_here: 'Lecture ici même', season: 'Saison', episode: 'Épisode' },
 };
 
 const yamboAppStyles = {
-    wrap: { margin: '0 auto 1rem', padding: '1.2rem 1rem', borderRadius: '0.8rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center', maxWidth: '32rem' },
+    wrap: { margin: '1.5rem auto 1rem', padding: '1.2rem 1rem', borderRadius: '0.8rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center', maxWidth: '32rem' },
     title: { fontSize: '1.1rem', fontWeight: 600, color: '#fff', marginBottom: '0.35rem' },
     subtitle: { fontSize: '0.95rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.45, marginBottom: '1rem' },
     row: { display: 'flex', gap: '0.6rem', justifyContent: 'center', flexWrap: 'wrap' },
@@ -137,33 +137,32 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
         onEpisodeSearch(season, episode);
     }, [onEpisodeSearch]);
 
+    /*
+     * Yammbo TV: "Míralo en la app" va debajo de "Ver ahora" (antes estaba
+     * arriba del todo y tapaba el botón de reproducir). En TV en vivo no sale.
+     */
+    const yamboAppCta = type !== 'tv' ?
+        <div style={yamboAppStyles.wrap}>
+            <div style={yamboAppStyles.title}>{yamboL.app_title}</div>
+            <div style={yamboAppStyles.subtitle}>
+                {yamboPremium ? yamboL.app_sub_premium : yamboL.app_sub_free}
+            </div>
+            <div style={yamboAppStyles.row}>
+                <a href={'https://tv.yammbo.com/install'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnPrimary}>
+                    <svg viewBox={'0 0 24 24'} style={yamboAppStyles.icon} fill={'none'} stroke={'currentColor'} strokeWidth={2} strokeLinecap={'round'} strokeLinejoin={'round'} aria-hidden={'true'}><path d={'M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2'} /></svg>
+                    {yamboCta.cta}
+                </a>
+            </div>
+            <div style={yamboAppStyles.devices}>{yamboCta.devices}</div>
+        </div>
+        :
+        null;
+    const yamboShowingStreams = props.streams.length > 0 &&
+        !props.streams.every((streams) => streams.content.type === 'Err') &&
+        filteredStreams.length > 0;
+
     return (
         <div className={classnames(className, styles['streams-list-container'])}>
-            {
-                /*
-                 * Yammbo TV: arriba del todo y siempre visible. La web no puede
-                 * reproducir (sin un servicio debrid no hay enlaces HTTP), asi que
-                 * no tiene sentido hacer esperar a que la busqueda acabe en vacio:
-                 * se ofrecen las apps desde el primer momento.
-                 * Excepcion: la TV en vivo si reproduce en la web, sin CTA.
-                 */
-                type !== 'tv' ?
-                    <div style={yamboAppStyles.wrap}>
-                        <div style={yamboAppStyles.title}>{yamboL.app_title}</div>
-                        <div style={yamboAppStyles.subtitle}>
-                            {yamboPremium ? yamboL.app_sub_premium : yamboL.app_sub_free}
-                        </div>
-                        <div style={yamboAppStyles.row}>
-                            <a href={'https://tv.yammbo.com/install'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnPrimary}>
-                                <svg viewBox={'0 0 24 24'} style={yamboAppStyles.icon} fill={'none'} stroke={'currentColor'} strokeWidth={2} strokeLinecap={'round'} strokeLinejoin={'round'} aria-hidden={'true'}><path d={'M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2'} /></svg>
-                                {yamboCta.cta}
-                            </a>
-                        </div>
-                        <div style={yamboAppStyles.devices}>{yamboCta.devices}</div>
-                    </div>
-                    :
-                    null
-            }
             <div className={styles['select-choices-wrapper']}>
                 {
                     video ?
@@ -244,7 +243,25 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                                 }
                                 <div className={styles['streams-container']} ref={streamsContainerRef}>
                                     {filteredStreams.map((stream, index) => (
-                                        <Stream
+                                        stream.behaviorHints && stream.behaviorHints.yammboEmbed && stream.deepLinks && typeof stream.deepLinks.player === 'string' ?
+                                            <Button key={index} className={styles['watch-now']} title={yamboCta.watch} href={stream.deepLinks.player} onClick={stream.onClick}>
+                                                <div className={styles['watch-now-icon']}>
+                                                    <Icon className={styles['watch-now-play']} name={'play'} />
+                                                </div>
+                                                <div className={styles['watch-now-text']}>
+                                                    <div className={styles['watch-now-label']}>{yamboCta.watch}</div>
+                                                    <div className={styles['watch-now-sub']}>
+                                                        {
+                                                            video && typeof video.season === 'number' && typeof video.episode === 'number' ?
+                                                                `${yamboCta.season} ${video.season} · ${yamboCta.episode} ${video.episode}`
+                                                                :
+                                                                yamboCta.watch_here
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </Button>
+                                            :
+                                            <Stream
                                             key={index}
                                             videoId={video?.id}
                                             videoReleased={video?.released}
@@ -257,6 +274,7 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                                             onClick={stream.onClick}
                                         />
                                     ))}
+                                    {yamboAppCta}
                                     {
                                         showInstallAddonsButton ?
                                             <Button className={styles['install-button-container']} title={t('ADDON_CATALOGUE_MORE')} href={'#/addons'}>
@@ -269,6 +287,7 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                                 </div>
                             </React.Fragment>
             }
+            {!yamboShowingStreams ? yamboAppCta : null}
         </div>
     );
 };
