@@ -17,6 +17,18 @@ const YAMBO_MORE_CHANNELS: Record<string, string> = {
     es: 'Más canales',
 };
 
+// Yammbo TV: heading of the "similar" list for movies/series
+const YAMBO_SIMILAR: Record<string, string> = {
+    en: 'More like this',
+    es: 'Parecidas',
+};
+
+type SimilarMeta = {
+    id: string;
+    name: string;
+    poster: string | null;
+};
+
 type Props = {
     className?: string;
     seriesInfo: SeriesInfo;
@@ -105,6 +117,31 @@ const SideDrawer = memo(forwardRef<HTMLDivElement, Props>(({ seriesInfo, classNa
     }, [liveChannelId]);
     const yamboLocaleShort = String(i18n?.language || 'en').split('-')[0].toLowerCase();
     const moreChannelsLabel = YAMBO_MORE_CHANNELS[yamboLocaleShort] || YAMBO_MORE_CHANNELS.en;
+    const similarLabel = YAMBO_SIMILAR[yamboLocaleShort] || YAMBO_SIMILAR.en;
+
+    // Yammbo TV: recomendaciones ("parecidas") desde el backend, para películas y series
+    const metaId = props.metaItem?.id;
+    const metaType = props.metaItem?.type;
+    const [similar, setSimilar] = useState<SimilarMeta[] | null>(null);
+    useEffect(() => {
+        setSimilar(null);
+        if (seriesInfo || typeof metaId !== 'string' || !metaId.startsWith('comx:')) {
+            return;
+        }
+        if (metaType !== 'movie' && metaType !== 'series') {
+            return;
+        }
+        const controller = new AbortController();
+        fetch(`${window.location.origin}/similar/${metaType}/${encodeURIComponent(metaId)}.json`, { signal: controller.signal })
+            .then((response) => response.ok ? response.json() : null)
+            .then((data: { metas?: Array<{ id: string; name: string; poster: string | null }> } | null) => {
+                if (data && Array.isArray(data.metas) && data.metas.length > 0) {
+                    setSimilar(data.metas.map((m) => ({ id: m.id, name: m.name, poster: m.poster ?? null })));
+                }
+            })
+            .catch(() => { /* ignore: the list is optional */ });
+        return () => controller.abort();
+    }, [metaId, metaType, seriesInfo]);
 
     const onLiveChannelClick = useCallback((event: React.MouseEvent<HTMLAnchorElement>, channel: LiveChannel) => {
         if (typeof window.CompressionStream !== 'function') {
@@ -206,6 +243,32 @@ const SideDrawer = memo(forwardRef<HTMLDivElement, Props>(({ seriesInfo, classNa
                                         <div className={styles['live-channel-name']}>{channel.name}</div>
                                         {channel.description ? <div className={styles['live-channel-description']}>{channel.description}</div> : null}
                                     </div>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                    : null
+            }
+            {
+                !seriesInfo && similar ?
+                    <div className={styles['similar']}>
+                        <div className={styles['similar-title']}>{similarLabel}</div>
+                        <div className={styles['similar-list']}>
+                            {similar.map((meta) => (
+                                <a
+                                    key={meta.id}
+                                    className={styles['similar-item']}
+                                    href={`#/detail/${metaType}/${encodeURIComponent(meta.id)}`}
+                                >
+                                    <div className={styles['similar-poster']}>
+                                        {
+                                            meta.poster ?
+                                                <img src={meta.poster} alt={''} loading={'lazy'} />
+                                                :
+                                                <span>{String(meta.name || '?').charAt(0).toUpperCase()}</span>
+                                        }
+                                    </div>
+                                    <div className={styles['similar-name']}>{meta.name}</div>
                                 </a>
                             ))}
                         </div>
