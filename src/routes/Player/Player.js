@@ -59,6 +59,19 @@ const Player = ({ urlParams, queryParams }) => {
         const notVideo = !/\.(m3u8|mp4|mkv|webm|ts|mov|avi|flv)([?#]|$)/i.test(url);
         return (hinted || notVideo) ? url : null;
     })();
+    // El iframe se navega con location.replace para no añadir una entrada al
+    // historial: si no, "atrás" necesitaba dos pulsaciones (una para el embed,
+    // otra para salir del reproductor).
+    const embedRef = React.useRef(null);
+    React.useEffect(() => {
+        if (yammboEmbedUrl && embedRef.current) {
+            try {
+                embedRef.current.contentWindow.location.replace(yammboEmbedUrl);
+            } catch (e) {
+                embedRef.current.src = yammboEmbedUrl;
+            }
+        }
+    }, [yammboEmbedUrl]);
     const [settings] = useSettings();
     const streamingServer = useStreamingServer();
     const statistics = useStatistics(player, streamingServer);
@@ -843,8 +856,9 @@ const Player = ({ urlParams, queryParams }) => {
             {
                 yammboEmbedUrl ?
                     <iframe
+                        ref={embedRef}
                         className={styles['layer']}
-                        src={yammboEmbedUrl}
+                        src="about:blank"
                         style={{ border: 'none', width: '100%', height: '100%' }}
                         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
                         allowFullScreen
@@ -928,9 +942,11 @@ const Player = ({ urlParams, queryParams }) => {
                     :
                     null
             }
-            <ControlBar
-                className={classnames(styles['layer'], styles['control-bar-layer'])}
-                paused={video.state.paused}
+            {
+                !yammboEmbedUrl ?
+                    <ControlBar
+                        className={classnames(styles['layer'], styles['control-bar-layer'])}
+                        paused={video.state.paused}
                 time={video.state.time}
                 duration={video.state.duration}
                 buffered={video.state.buffered}
@@ -958,15 +974,23 @@ const Player = ({ urlParams, queryParams }) => {
                 onToggleSpeedMenu={toggleSpeedMenu}
                 onToggleStatisticsMenu={toggleStatisticsMenu}
                 onToggleSideDrawer={toggleSideDrawer}
-                onMouseMove={onBarMouseMove}
-                onMouseOver={onBarMouseMove}
-                onTouchEnd={onContainerMouseLeave}
-            />
-            <Indicator
-                className={classnames(styles['layer'], styles['indicator-layer'])}
-                videoState={video.state}
-                disabled={subtitlesMenuOpen}
-            />
+                        onMouseMove={onBarMouseMove}
+                        onMouseOver={onBarMouseMove}
+                        onTouchEnd={onContainerMouseLeave}
+                    />
+                    :
+                    null
+            }
+            {
+                !yammboEmbedUrl ?
+                    <Indicator
+                        className={classnames(styles['layer'], styles['indicator-layer'])}
+                        videoState={video.state}
+                        disabled={subtitlesMenuOpen}
+                    />
+                    :
+                    null
+            }
             {
                 nextVideoPopupOpen ?
                     <NextVideoPopup
