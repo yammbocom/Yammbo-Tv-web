@@ -31,6 +31,21 @@ if (typeof window !== 'undefined') {
         }
         lastHash = current;
     });
+    // En una ficha el servidor pone ?ver=tipo/id en la URL (shareSync, con
+    // replaceState). Al volver atrás desde o hacia esa entrada cambia algo más
+    // que el "#", y Chrome entonces solo dispara `popstate`, no `hashchange`:
+    // el router (que solo escucha `hashchange`) no se enteraba, la pantalla no
+    // cambiaba y había que pulsar atrás una y otra vez hasta salir del sitio.
+    // Si tras el popstate el hash cambió y no llegó el evento nativo, se emite.
+    window.addEventListener('popstate', () => {
+        const oldURL = window.location.href.replace(/#.*$/, '') + lastHash;
+        setTimeout(() => {
+            const current = window.location.hash || '#/';
+            if (current !== lastHash) {
+                window.dispatchEvent(new HashChangeEvent('hashchange', { oldURL, newURL: window.location.href }));
+            }
+        }, 30);
+    });
 }
 
 // Como `location.replace(href)`, pero conservando `history.state` (ahí va la
