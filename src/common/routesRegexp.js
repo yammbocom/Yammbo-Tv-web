@@ -17,6 +17,11 @@ const routesRegexp = {
         regexp: /^\/library(?:\/([^/]*))?$/,
         urlParamsNames: ['type']
     },
+    livetv: {
+        regexp: /^\/tv$/,
+        urlParamsNames: []
+    },
+    // Yammbo TV: el calendario se retiró; los enlaces viejos abren TV en vivo.
     calendar: {
         regexp: /^\/calendar(?:\/([^/]*)\/([^/]*))?$/,
         urlParamsNames: ['year', 'month']

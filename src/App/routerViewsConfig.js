@@ -24,8 +24,12 @@ const routerViewsConfig = [
             component: routes.Library
         },
         {
+            ...routesRegexp.livetv,
+            component: routes.LiveTv
+        },
+        {
             ...routesRegexp.calendar,
-            component: routes.Calendar
+            component: routes.LiveTv
         },
         {
             ...routesRegexp.continuewatching,

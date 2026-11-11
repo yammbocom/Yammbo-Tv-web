@@ -12,6 +12,7 @@ const styles = require('./styles');
 const { default: StreamingServerWarning } = require('./StreamingServerWarning');
 
 const THRESHOLD = 5;
+const { YAMBO_IPTV_ID } = require('stremio/common/yamboAddons');
 
 const Board = () => {
     const t = useTranslate();
@@ -22,6 +23,17 @@ const Board = () => {
     const profile = useProfile();
     const boardCatalogsOffset = continueWatchingPreview.items.length > 0 ? 1 : 0;
     const scrollContainerRef = React.useRef();
+    // Yammbo TV: las filas de canales no se pintan (tienen su sección, #/tv). El
+    // rango visible se cuenta en filas pintadas y hay que traducirlo a índices de
+    // catálogo: los canales no siempre van al final.
+    const shownIndexes = React.useMemo(() => {
+        return board.catalogs.reduce((indexes, catalog, index) => {
+            if (catalog.addon?.manifest?.id !== YAMBO_IPTV_ID) {
+                indexes.push(index);
+            }
+            return indexes;
+        }, []);
+    }, [board.catalogs]);
     const showStreamingServerWarning = React.useMemo(() => {
         return streamingServer.settings !== null && streamingServer.settings.type === 'Err' && (
             isNaN(profile.settings.streamingServerWarningDismissed.getTime()) ||
@@ -35,12 +47,15 @@ const Board = () => {
 
         const start = Math.max(0, range.start - boardCatalogsOffset - THRESHOLD);
         const end = range.end - boardCatalogsOffset + THRESHOLD;
-        if (end < start) {
+        if (end < start || shownIndexes.length === 0) {
             return;
         }
 
-        loadBoardRows({ start, end });
-    }, [boardCatalogsOffset]);
+        loadBoardRows({
+            start: shownIndexes[Math.min(start, shownIndexes.length - 1)],
+            end: shownIndexes[Math.min(end, shownIndexes.length - 1)]
+        });
+    }, [boardCatalogsOffset, shownIndexes]);
     const onScroll = React.useCallback(debounce(onVisibleRangeChange, 250), [onVisibleRangeChange]);
     React.useLayoutEffect(() => {
         onVisibleRangeChange();
@@ -63,6 +78,10 @@ const Board = () => {
                             null
                     }
                     {board.catalogs.map((catalog, index) => {
+                        // Yammbo TV: los canales en vivo tienen su propia sección (#/tv).
+                        if (catalog.addon?.manifest?.id === YAMBO_IPTV_ID) {
+                            return null;
+                        }
                         switch (catalog.content?.type) {
                             case 'Ready': {
                                 return (

@@ -9,9 +9,14 @@ const { default: Icon } = require('@stremio/stremio-icons/react');
 const { withCoreSuspender, getVisibleChildrenRange } = require('stremio/common');
 const { Image, MainNavBars, MetaItem, MetaRow } = require('stremio/components');
 const useSearch = require('./useSearch');
+const { YAMBO_IPTV_ID } = require('stremio/common/yamboAddons');
 const styles = require('./styles');
 
 const THRESHOLD = 100;
+
+// Yammbo TV: cada categoría de canales responde a la búsqueda y repetía los
+// mismos canales en 9 filas. Queda solo "Todos los canales".
+const isHiddenCatalog = (catalog) => catalog.addon?.manifest?.id === YAMBO_IPTV_ID && catalog.id !== 'iptv-all';
 
 const Search = ({ queryParams }) => {
     const t = useTranslate();
@@ -29,8 +34,18 @@ const Search = ({ queryParams }) => {
             null;
     }, [search.selected]);
     const scrollContainerRef = React.useRef();
+    // Las filas ocultas no están en el DOM: el rango visible se cuenta en filas
+    // pintadas y hay que traducirlo a índices de catálogo antes de pedirlo.
+    const shownIndexes = React.useMemo(() => {
+        return search.catalogs.reduce((indexes, catalog, index) => {
+            if (!isHiddenCatalog(catalog)) {
+                indexes.push(index);
+            }
+            return indexes;
+        }, []);
+    }, [search.catalogs]);
     const onVisibleRangeChange = React.useCallback(() => {
-        if (search.catalogs.length === 0) {
+        if (search.catalogs.length === 0 || shownIndexes.length === 0) {
             return;
         }
 
@@ -39,8 +54,11 @@ const Search = ({ queryParams }) => {
             return;
         }
 
-        loadSearchRows(range);
-    }, [search.catalogs]);
+        loadSearchRows({
+            start: shownIndexes[Math.min(range.start, shownIndexes.length - 1)],
+            end: shownIndexes[Math.min(range.end, shownIndexes.length - 1)]
+        });
+    }, [search.catalogs, shownIndexes]);
     const onScroll = React.useCallback(debounce(onVisibleRangeChange, 250), [onVisibleRangeChange]);
     React.useLayoutEffect(() => {
         onVisibleRangeChange();
@@ -85,6 +103,9 @@ const Search = ({ queryParams }) => {
                             </div>
                             :
                             search.catalogs.map((catalog, index) => {
+                                if (isHiddenCatalog(catalog)) {
+                                    return null;
+                                }
                                 switch (catalog.content?.type) {
                                     case 'Ready': {
                                         return (

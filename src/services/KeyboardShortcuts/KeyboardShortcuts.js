@@ -35,7 +35,7 @@ function KeyboardShortcuts() {
             }
             case 'Digit4': {
                 event.preventDefault();
-                window.location = '#/calendar';
+                window.location = '#/tv';
                 break;
             }
             case 'Digit5': {
