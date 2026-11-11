@@ -59,13 +59,21 @@ lived only in node_modules and any install would have silently reverted it.
 
 File: `patches/getContentType.yambo-hls.js`
 
-This overrides `@stremio/stremio-video/src/HTMLVideo/getContentType.js` so, in
-browsers WITHOUT native HLS (Firefox, older Chrome), a stream whose URL path
-ends in `.m3u8` is treated as HLS (hls.js) without the CORS `HEAD` probe. About
-1,500 live TV links answer that `HEAD` with a generic content-type or refuse
-it, and the player then fell back to `<video src>`, which only plays HLS where
-the browser supports it natively. Browsers with native HLS keep the original
-`HEAD` path: hls.js needs CORS, the native fallback does not. The data build of `yammbocom/yammbo-iptv`
+This overrides `@stremio/stremio-video/src/HTMLVideo/getContentType.js`.
+HTMLVideo hands a stream to hls.js only when this returns exactly
+`application/vnd.apple.mpegurl`; anything else goes to `<video src>`, and the
+native HLS of Chrome 150 fails on many live streams that hls.js plays ("Video
+is not supported", e.g. Cartoon Network). The override:
+
+- normalises HLS types (`application/x-mpegURL`, `...; charset=utf-8`,
+  `audio/mpegurl`): ~18% of live channels answer the `HEAD` that way;
+- treats a `.m3u8` path as HLS when the `HEAD` answered with a generic type or
+  a non-2xx status (an answer at all proves CORS, which is all hls.js needs);
+- skips the `HEAD` for `.m3u8` in browsers without native HLS (Firefox).
+
+Only a `HEAD` that fails outright (no CORS) falls back to `<video src>`, which
+does not need CORS. Measured 2026-11-11 in Chrome 150 on 42 sampled channels,
+2 tries per path: 34 played before, 38 after. The data build of `yammbocom/yammbo-iptv`
 (`scripts/build.mjs`, `isM3u8Path`) relies on this: it publishes `.m3u8`
 links without checking the `HEAD`, so the two tests must stay identical.
 
