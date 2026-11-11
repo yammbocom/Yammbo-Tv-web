@@ -7,6 +7,11 @@
     action-buttons-container: action-buttons-container;
     meta-info-container: meta-info-container;
     logo: logo;
+    logo-placeholder: logo-placeholder;
+    runtime-release-info-container: runtime-release-info-container;
+    runtime-label: runtime-label;
+    release-info-label: release-info-label;
+    meta-links: meta-links;
 }
 
 @padding: 1rem;
@@ -83,6 +88,22 @@
                 object-fit: contain;
                 object-position: left center;
                 margin: 0 0 1rem 0;
+            }
+
+            // Yammbo TV: the title had a fixed 6rem box (sized for a logo), leaving a gap
+            .meta-info-container .logo-placeholder {
+                height: auto;
+                margin: 0 3rem 0.5rem 0;
+                font-size: 1.5rem;
+                line-height: 1.25;
+            }
+
+            .meta-info-container .runtime-release-info-container {
+                margin-top: 0;
+
+                .runtime-label, .release-info-label {
+                    margin: 0.25rem 1.5rem 0.25rem 0;
+                }
             }
         }
     }
@@ -270,11 +291,39 @@
         padding: calc(@padding / 2);
 
         .info {
+            flex: none;
             padding: calc(@padding / 2);
+
+            // Yammbo TV: on phones the header took half the screen; keep it to a few lines
+            .side-drawer-meta-preview .meta-info-container {
+                .logo-placeholder {
+                    font-size: 1.25rem;
+                }
+
+                .runtime-release-info-container .runtime-label,
+                .runtime-release-info-container .release-info-label {
+                    font-size: 1rem;
+                }
+
+                .description-container {
+                    margin-top: 0.25rem;
+                    font-size: 0.9rem;
+                    line-height: 1.5em;
+                    -webkit-line-clamp: 2;
+                }
+
+                .meta-links {
+                    display: none;
+                }
+            }
         }
 
-        .live-channels {
+        .live-channels, .similar {
             padding: 0 calc(@padding / 2);
+        }
+
+        .similar {
+            min-height: 0;
         }
     }
 }
