@@ -66,7 +66,7 @@ native HLS of Chrome 150 fails on many live streams that hls.js plays ("Video
 is not supported", e.g. Cartoon Network). The override:
 
 - normalises HLS types (`application/x-mpegURL`, `...; charset=utf-8`,
-  `audio/mpegurl`): ~18% of live channels answer the `HEAD` that way;
+  and `audio/mpegurl` on a `.m3u8` path): ~18% of live channels answer the `HEAD` that way;
 - treats a `.m3u8` path as HLS when the `HEAD` answered with a generic type or
   a non-2xx status (an answer at all proves CORS, which is all hls.js needs);
 - skips the `HEAD` for `.m3u8` in browsers without native HLS (Firefox).

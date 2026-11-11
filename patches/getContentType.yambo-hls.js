@@ -11,8 +11,9 @@
 // falls back to <video src>, which does not need CORS. Keep isM3u8Path()
 // identical to the one in yammbocom/yammbo-iptv scripts/build.mjs.
 var HLS = 'application/vnd.apple.mpegurl';
-var HLS_TYPES = ['application/vnd.apple.mpegurl', 'application/x-mpegurl', 'audio/mpegurl', 'audio/x-mpegurl'];
-var GENERIC_TYPES = ['', 'text/plain', 'application/octet-stream', 'binary/octet-stream'];
+var HLS_TYPES = ['application/vnd.apple.mpegurl', 'application/x-mpegurl'];
+// audio/mpegurl also labels plain .m3u radio lists, which hls.js rejects: HLS only on a .m3u8 path.
+var GENERIC_TYPES = ['', 'text/plain', 'application/octet-stream', 'binary/octet-stream', 'audio/mpegurl', 'audio/x-mpegurl'];
 
 function isM3u8Path(url) {
     try {
