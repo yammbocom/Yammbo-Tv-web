@@ -153,14 +153,12 @@
         margin: 0.5rem 0 0.25rem;
         padding: 0.9rem 1.25rem;
         border-radius: 1.1rem;
-        background: linear-gradient(135deg, #ff2a36 0%, #e50914 50%, #a8070f 100%);
-        box-shadow: 0 0.75rem 2rem rgba(229, 9, 20, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.22);
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        background: var(--primary-accent-color);
+        transition: transform 0.15s ease, background-color 0.15s ease;
 
         &:hover, &:focus {
             outline: none;
-            transform: translateY(-1px);
-            box-shadow: 0 1rem 2.5rem rgba(229, 9, 20, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+            background: #B0070F;
         }
 
         &:active {
@@ -176,7 +174,6 @@
             height: 3.1rem;
             border-radius: 50%;
             background-color: #fff;
-            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.25);
 
             .watch-now-play {
                 width: 1.35rem;
