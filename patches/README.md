@@ -83,3 +83,29 @@ links without checking the `HEAD`, so the two tests must stay identical.
 cp patches/getContentType.yambo-hls.js \
    node_modules/@stremio/stremio-video/src/HTMLVideo/getContentType.js
 ```
+
+## Native HLS fallback after a fatal hls.js error
+
+File: `patches/HTMLVideo.yambo-hls-fallback.js`
+
+This overrides `@stremio/stremio-video/src/HTMLVideo/HTMLVideo.js`. Stock
+HTMLVideo never listens to `Hls.Events.ERROR`, so a live stream that hls.js
+cannot play just stalls, although some of those channels play with the native
+HLS of the browser (Chrome 150, Safari). The override adds one retry: on the
+first fatal hls.js error of a stream, if
+`videoElement.canPlayType('application/vnd.apple.mpegurl') !== ''`, hls.js is
+destroyed and `videoElement.src = stream.url` is set; the normal `<video>`
+events (`playing` / `error`) take over. The retry flag is reset on every `load`
+command. Browsers without native HLS (Firefox) and non-fatal errors keep the
+stock behaviour. It works together with `getContentType.yambo-hls.js` above.
+
+**How to re-apply after `pnpm install` (which resets node_modules):**
+
+```bash
+cp patches/HTMLVideo.yambo-hls-fallback.js \
+   node_modules/@stremio/stremio-video/src/HTMLVideo/HTMLVideo.js
+```
+
+The copy above is the whole patched file. Note that pnpm hard-links
+node_modules files to its global store, so `cp` over an existing file also
+edits the store copy; to avoid that, copy to a temp name and `mv` it over.
