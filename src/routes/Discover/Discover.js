@@ -20,12 +20,21 @@ const Discover = ({ urlParams, queryParams }) => {
     const [discover, loadNextPage] = useDiscover(urlParams, queryParams);
     const [selectInputs, hasNextPage] = useSelectableInputs(discover);
     const [inputsModalOpen, openInputsModal, closeInputsModal] = useBinaryState(false);
-    const [addonModalOpen, openAddonModal, closeAddonModal] = useBinaryState(false);
+    const [addonModalOpen, , closeAddonModal] = useBinaryState(false);
     const [selectedMetaItemIndex, setSelectedMetaItemIndex] = React.useState(0);
 
     const metasContainerRef = React.useRef();
     const metaPreviewRef = React.useRef();
 
+    // Addons are managed by the app (App.js removes Cinemeta and others), so a
+    // link to a catalog of an addon that is not installed (old Cinemeta genre
+    // links, cached metas) goes to our own Discover instead of offering to
+    // install it.
+    React.useEffect(() => {
+        if (discover.catalog !== null && !discover.catalog.installed) {
+            window.location.replace('#/discover');
+        }
+    }, [discover.catalog]);
     React.useEffect(() => {
         if (discover.catalog?.content.type === 'Loading') {
             metasContainerRef.current.scrollTop = 0;
@@ -118,17 +127,6 @@ const Discover = ({ urlParams, queryParams }) => {
                             </Button>
                         </div>
                     </div>
-                    {
-                        discover.catalog !== null && !discover.catalog.installed ?
-                            <div className={styles['missing-addon-warning-container']}>
-                                <div className={styles['warning-label']}>{t('ERR_ADDON_NOT_INSTALLED')}</div>
-                                <Button className={styles['install-button']} title={t('INSTALL_ADDON')} onClick={openAddonModal}>
-                                    <div className={styles['label']}>{t('ADDON_INSTALL')}</div>
-                                </Button>
-                            </div>
-                            :
-                            null
-                    }
                     {
                         discover.catalog === null ?
                             <DelayedRenderer delay={500}>
