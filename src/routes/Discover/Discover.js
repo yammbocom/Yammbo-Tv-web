@@ -8,11 +8,15 @@ const { default: Icon } = require('@stremio/stremio-icons/react');
 const { useServices } = require('stremio/services');
 const { CONSTANTS, useBinaryState, useOnScrollToBottom, withCoreSuspender } = require('stremio/common');
 const { AddonDetailsModal, Button, DelayedRenderer, Image, MainNavBars, MetaItem, MetaPreview, ModalDialog, MultiselectMenu } = require('stremio/components');
+const { replaceHash } = require('stremio/common/yamboHistory');
 const useDiscover = require('./useDiscover');
 const useSelectableInputs = require('./useSelectableInputs');
 const styles = require('./styles');
 
 const SCROLL_TO_BOTTOM_THRESHOLD = 400;
+
+// Installed by App.js on first run with an async fetch: until then their catalogs read as not installed.
+const APP_MANAGED_ADDONS = typeof window !== 'undefined' ? ['/manifest.json', '/iptv/manifest.json'].map((path) => window.location.origin + path) : [];
 
 const Discover = ({ urlParams, queryParams }) => {
     const { t } = useTranslation();
@@ -30,11 +34,17 @@ const Discover = ({ urlParams, queryParams }) => {
     // link to a catalog of an addon that is not installed (old Cinemeta genre
     // links, cached metas) goes to our own Discover instead of offering to
     // install it.
+    // replaceHash keeps history.state (the back-button mark of yamboHistory.js).
     React.useEffect(() => {
-        if (discover.catalog !== null && !discover.catalog.installed) {
-            window.location.replace('#/discover');
+        if (discover.catalog === null || discover.catalog.installed) {
+            return;
         }
-    }, [discover.catalog]);
+        const base = discover.selected !== null ? discover.selected.request.base : null;
+        if (APP_MANAGED_ADDONS.includes(base) || window.location.hash === '#/discover') {
+            return;
+        }
+        replaceHash('#/discover');
+    }, [discover.catalog, discover.selected]);
     React.useEffect(() => {
         if (discover.catalog?.content.type === 'Loading') {
             metasContainerRef.current.scrollTop = 0;
