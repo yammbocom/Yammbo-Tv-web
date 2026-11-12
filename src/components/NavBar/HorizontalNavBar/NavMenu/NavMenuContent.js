@@ -10,6 +10,7 @@ const { Button } = require('stremio/components');
 const { default: useFullscreen } = require('stremio/common/useFullscreen');
 const useProfile = require('stremio/common/useProfile');
 const usePWA = require('stremio/common/usePWA');
+const useInstallPrompt = require('stremio/common/useInstallPrompt');
 const useTorrent = require('stremio/common/useTorrent');
 const { withCoreSuspender } = require('stremio/common/CoreSuspender');
 const useStreamingServer = require('stremio/common/useStreamingServer');
@@ -50,6 +51,7 @@ const NavMenuContent = ({ onClick }) => {
     const yamboPremium = !!(yamboUser && yamboUser.subscription_active);
     const yamboL = useYamboPremiumLabels(i18n);
     const yamboInstallL = useYamboInstallLabels(i18n);
+    const { canInstall: yamboCanInstall, promptInstall: yamboPromptInstall } = useInstallPrompt();
     const streamingServer = useStreamingServer();
     const { createTorrentFromMagnet } = useTorrent();
     const [fullscreen, requestFullscreen, exitFullscreen] = useFullscreen();
@@ -128,16 +130,18 @@ const NavMenuContent = ({ onClick }) => {
                         </Button>
                         {
                             /*
-                             * Yammbo TV: en vez del prompt de instalar la PWA,
-                             * llevamos a /install (apps nativas de movil y TV),
-                             * que es donde el contenido si reproduce. Por eso ya
-                             * no depende del evento del navegador y se ve siempre.
+                             * Yammbo TV: la web ya reproduce, así que donde el
+                             * navegador puede instalar la PWA (Chrome/Edge en
+                             * Windows, Mac, Linux, Android) se abre su instalador.
+                             * Si no puede (Firefox, Safari, ya instalada), lleva a
+                             * /install (apps nativas de móvil y TV).
                              */
                             <Button
                                 className={styles['nav-menu-option-container']}
                                 title={yamboInstallL.title}
-                                href={'https://tv.yammbo.com/install'}
-                                target={'_blank'}>
+                                href={yamboCanInstall ? undefined : 'https://tv.yammbo.com/install'}
+                                target={yamboCanInstall ? undefined : '_blank'}
+                                onClick={yamboCanInstall ? yamboPromptInstall : undefined}>
                                 <Icon className={styles['icon']} name={'download'} />
                                 <div className={styles['nav-menu-option-label']}>
                                     {yamboInstallL.label}
