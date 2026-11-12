@@ -10,7 +10,7 @@
         "video"
     ],
     "background_color": "#000000",
-    "theme_color": "#E50914",
+    "theme_color": "#000000",
     "orientation": "any",
     "display": "standalone",
     "display_override": [
@@ -49,9 +49,9 @@
             ]
         },
         {
-            "name": "Próximos episodios",
-            "short_name": "Calendario",
-            "url": "./#/calendar",
+            "name": "TV en vivo",
+            "short_name": "TV",
+            "url": "./#/tv",
             "icons": [
                 {
                     "src": "images/icon_196x196.png",
