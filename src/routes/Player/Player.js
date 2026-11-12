@@ -29,6 +29,9 @@ const styles = require('./styles');
 const Video = require('./Video');
 const { default: Indicator } = require('./Indicator/Indicator');
 
+// Yammbo TV: hosters cuyas páginas embed devuelve el backend (ComxService::streams).
+const YAMMBO_EMBED_HOSTS = ['api.moviemaster.lat'];
+
 const findTrackByLang = (tracks, lang) => tracks.find((track) => track.lang === lang || langs.where('1', track.lang)?.[2] === lang);
 const findTrackById = (tracks, id) => tracks.find((track) => track.id === id);
 
@@ -45,7 +48,10 @@ const Player = ({ urlParams, queryParams }) => {
     // directo: el hoster sólo acepta IP residencial, no la del VPS) y se montan
     // en un iframe. El hint `yammboEmbed` puede no llegar (el core descarta
     // campos desconocidos), así que además se detecta que la url no sea un vídeo
-    // directo (.m3u8/.mp4...): en esta app las únicas url no-vídeo son las de CO-MX.
+    // directo (.m3u8/.mp4...). Solo se embeben páginas https de los hosters que
+    // devuelve el backend (ComxService::streams): la url sale del enlace
+    // #/player/<stream>, así que sin esta lista cualquiera podía montar su página
+    // (o un javascript:) a pantalla completa bajo tv.yammbo.com.
     const yammboEmbedUrl = (() => {
         const stream = player && player.selected ? player.selected.stream : null;
         if (!stream) {
@@ -57,21 +63,16 @@ const Player = ({ urlParams, queryParams }) => {
         }
         const hinted = stream.behaviorHints && stream.behaviorHints.yammboEmbed === true;
         const notVideo = !/\.(m3u8|mp4|mkv|webm|ts|mov|avi|flv)([?#]|$)/i.test(url);
-        return (hinted || notVideo) ? url : null;
-    })();
-    // El iframe se navega con location.replace para no añadir una entrada al
-    // historial: si no, "atrás" necesitaba dos pulsaciones (una para el embed,
-    // otra para salir del reproductor).
-    const embedRef = React.useRef(null);
-    React.useEffect(() => {
-        if (yammboEmbedUrl && embedRef.current) {
-            try {
-                embedRef.current.contentWindow.location.replace(yammboEmbedUrl);
-            } catch (e) {
-                embedRef.current.src = yammboEmbedUrl;
-            }
+        if (!hinted && !notVideo) {
+            return null;
         }
-    }, [yammboEmbedUrl]);
+        try {
+            const parsed = new URL(url);
+            return parsed.protocol === 'https:' && YAMMBO_EMBED_HOSTS.includes(parsed.hostname) ? parsed.href : null;
+        } catch (e) {
+            return null;
+        }
+    })();
     const [settings] = useSettings();
     const streamingServer = useStreamingServer();
     const statistics = useStatistics(player, streamingServer);
@@ -855,10 +856,12 @@ const Player = ({ urlParams, queryParams }) => {
             onMouseLeave={onContainerMouseLeave}>
             {
                 yammboEmbedUrl ?
+                    // Un iframe nuevo por url (key): su primera carga no añade
+                    // entrada al historial, así que "atrás" sale del reproductor.
                     <iframe
-                        ref={embedRef}
+                        key={yammboEmbedUrl}
                         className={styles['layer']}
-                        src="about:blank"
+                        src={yammboEmbedUrl}
                         style={{ border: 'none', width: '100%', height: '100%' }}
                         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
                         allowFullScreen
