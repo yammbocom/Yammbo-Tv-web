@@ -196,7 +196,7 @@ const baseStyles = {
     poster: { display: 'block', aspectRatio: '2/3', background: '#1a1a1a', textDecoration: 'none', position: 'relative' },
     posterImg: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
     posterPlaceholder: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, fontWeight: 800, color: '#444' },
-    rating: { position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.75)', color: '#FFD700', padding: '3px 8px', borderRadius: 4, fontSize: 12, fontWeight: 700 },
+    rating: { position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.75)', color: '#fff', padding: '3px 8px', borderRadius: 4, fontSize: 12, fontWeight: 700 },
     info: { padding: 10 },
     name: { fontSize: 13, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     year: { fontSize: 12, color: '#888', marginTop: 2 },

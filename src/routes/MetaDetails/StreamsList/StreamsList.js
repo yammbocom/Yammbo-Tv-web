@@ -301,7 +301,7 @@ StreamsList.propTypes = {
 };
 
 const yamboCtaStyles = {
-    wrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '24px 20px', background: 'linear-gradient(135deg,#1a0808,#0a0a0a)', border: '1px solid rgba(229,9,20,0.35)', borderRadius: 12, margin: '16px 0', textAlign: 'center' },
+    wrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '24px 20px', background: '#0a0a0a', border: '1px solid rgba(229,9,20,0.35)', borderRadius: 12, margin: '16px 0', textAlign: 'center' },
     wrapQuiet: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '14px', textAlign: 'center' },
     title: { fontSize: 17, fontWeight: 700, color: '#fff' },
     subtitle: { fontSize: 13, color: '#bdbdbd', maxWidth: 340, lineHeight: 1.45 },
