@@ -19,25 +19,20 @@ const StreamingServerWarning = ({ className }: Props) => {
     const profile = useProfile();
 
     // Yammbo Tv: localized copy without relying on the i18n bundle. The web
-    // needs a local streaming server to play; which app fixes that depends on
-    // the device, so the message and the link follow the platform.
+    // plays everything now, so this is only a suggestion to also install the
+    // apps (Android phones, Android TV, Fire TV); the link follows the device.
     const lang = (i18n && i18n.language ? i18n.language : 'en').toLowerCase();
     const isEs = lang.indexOf('es') === 0;
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
     const isAndroid = /Android/i.test(ua);
-    const isWindows = /Windows/i.test(ua);
-    const title = isEs ? 'Para ver películas y series, instala la app' : 'Install the app to watch movies and series';
+    const title = isEs ? 'Yammbo Tv también en tu móvil y tu TV' : 'Yammbo Tv on your phone and TV too';
     const statement = isAndroid
-        ? (isEs ? 'La TV en vivo se ve aquí; las películas y series necesitan la app de Yammbo Tv para Android, con tu misma cuenta.' : 'Live TV plays right here; movies and series need the Yammbo Tv Android app, with your same account.')
-        : isWindows
-            ? (isEs ? 'Instala Yammbo TV Service en tu PC: es gratis y tarda un minuto. Después podrás reproducir aquí mismo.' : 'Install Yammbo TV Service on your PC: it is free and takes a minute. Then you can play right here.')
-            : (isEs ? 'La TV en vivo se ve aquí; para películas y series instala la app en tu teléfono Android, tu TV o tu PC con Windows.' : 'Live TV plays right here; for movies and series install the app on your Android phone, your TV or your Windows PC.');
-    const installHref = 'https://tv.yammbo.com/install' + (isAndroid ? '#movil' : isWindows ? '#windows' : '');
+        ? (isEs ? 'Ya puedes verlo aquí. Con la app para Android lo tienes siempre a mano, con tu misma cuenta y tu progreso.' : 'You can already watch it here. The Android app keeps it at hand, with your same account and progress.')
+        : (isEs ? 'Ya puedes verlo aquí. También tienes la app para móviles Android, Android TV y Fire TV, con tu misma cuenta y tu progreso.' : 'You can already watch it here. There is also an app for Android phones, Android TV and Fire TV, with your same account and progress.');
+    const installHref = 'https://tv.yammbo.com/install' + (isAndroid ? '#movil' : '');
     const installLabel = isAndroid
         ? (isEs ? 'Descargar la app' : 'Get the app')
-        : isWindows
-            ? (isEs ? 'Descargar para Windows' : 'Download for Windows')
-            : (isEs ? 'Ver cómo instalar' : 'See how to install');
+        : (isEs ? 'Ver las apps' : 'See the apps');
     const laterLabel = isEs ? 'Más tarde' : 'Later';
     const dismissLabel = isEs ? 'No mostrar de nuevo' : 'Don\'t show again';
 
