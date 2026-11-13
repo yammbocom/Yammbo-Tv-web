@@ -858,12 +858,16 @@ const Player = ({ urlParams, queryParams }) => {
                 yammboEmbedUrl ?
                     // Un iframe nuevo por url (key): su primera carga no añade
                     // entrada al historial, así que "atrás" sale del reproductor.
+                    // Sin allow-popups ni allow-top-navigation: tocar el anuncio
+                    // del hoster abría la web del anunciante en otra pestaña.
+                    // moviemaster reproduce igual sin ellos (todos sus
+                    // servidores son HLS directo, sin iframes de terceros).
                     <iframe
                         key={yammboEmbedUrl}
                         className={styles['layer']}
                         src={yammboEmbedUrl}
                         style={{ border: 'none', width: '100%', height: '100%' }}
-                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+                        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                         allowFullScreen
                         allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                     />
