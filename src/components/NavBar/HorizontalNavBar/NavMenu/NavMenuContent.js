@@ -15,6 +15,7 @@ const useTorrent = require('stremio/common/useTorrent');
 const { withCoreSuspender } = require('stremio/common/CoreSuspender');
 const useStreamingServer = require('stremio/common/useStreamingServer');
 const useYamboUser = require('stremio/common/useYamboUser');
+const { usePlatform } = require('stremio/common/Platform');
 const styles = require('./styles');
 
 const YAMBO_INSTALL_LABELS = {
@@ -52,6 +53,8 @@ const NavMenuContent = ({ onClick }) => {
     const yamboL = useYamboPremiumLabels(i18n);
     const yamboInstallL = useYamboInstallLabels(i18n);
     const { canInstall: yamboCanInstall, promptInstall: yamboPromptInstall } = useInstallPrompt();
+    const platform = usePlatform();
+    const yamboInstallHref = platform.name === 'ios' ? 'https://tv.yammbo.com/install/ios' : 'https://tv.yammbo.com/install';
     const streamingServer = useStreamingServer();
     const { createTorrentFromMagnet } = useTorrent();
     const [fullscreen, requestFullscreen, exitFullscreen] = useFullscreen();
@@ -134,12 +137,13 @@ const NavMenuContent = ({ onClick }) => {
                              * navegador puede instalar la PWA (Chrome/Edge en
                              * Windows, Mac, Linux, Android) se abre su instalador.
                              * Si no puede (Firefox, Safari, ya instalada), lleva a
-                             * /install (apps nativas de móvil y TV).
+                             * /install (apps nativas de móvil y TV); en iPhone y
+                             * iPad, a /install/ios (añadir a la pantalla de inicio).
                              */
                             <Button
                                 className={styles['nav-menu-option-container']}
                                 title={yamboInstallL.title}
-                                href={yamboCanInstall ? undefined : 'https://tv.yammbo.com/install'}
+                                href={yamboCanInstall ? undefined : yamboInstallHref}
                                 target={yamboCanInstall ? undefined : '_blank'}
                                 onClick={yamboCanInstall ? yamboPromptInstall : undefined}>
                                 <Icon className={styles['icon']} name={'download'} />
