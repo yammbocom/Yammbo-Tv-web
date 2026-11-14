@@ -9,17 +9,17 @@ const { useServices } = require('stremio/services');
 const { Button, MultiselectMenu } = require('stremio/components');
 const Stream = require('./Stream');
 const styles = require('./styles');
-const { usePlatform, useProfile, useYamboUser } = require('stremio/common');
+const { usePlatform, useProfile } = require('stremio/common');
 const { default: SeasonEpisodePicker } = require('../EpisodePicker');
 
 const ALL_ADDONS_KEY = 'ALL';
 
-// Yammbo TV: textos del CTA "Hazte Premium" para stream vacío
+// Yammbo TV: textos del bloque "Míralo en la app" y del stream vacío
 const YAMBO_STREAM_CTA = {
-    en: { title: 'Unlock streams with Premium', subtitle: 'Your subscription gives you instant access to community addons.', button: 'Go Premium', active: 'Premium active', not_found: 'No streams found yet — try again in a moment.', app_title: 'Watch it in the Yammbo Tv app', app_sub_premium: 'Your subscription works there too — streams play normally in the app.', app_sub_free: 'Install the app and try it free for 7 days.', app_mobile: 'Get it for Android', app_tv: 'Get it for TV' },
-    es: { title: 'Desbloquea los streams con Premium', subtitle: 'Con tu suscripción tendrás acceso instantáneo a los addons de la comunidad.', button: 'Hazte Premium', active: 'Premium activo', not_found: 'Aún no encontramos streams — inténtalo en un momento.', app_title: 'Míralo en la app de Yammbo Tv', app_sub_premium: 'Tu suscripción también vale ahí — en la app el contenido sí reproduce.', app_sub_free: 'Instala la app y pruébala gratis 7 días.', app_mobile: 'Descargar para Android', app_tv: 'Descargar para TV' },
-    pt: { title: 'Desbloqueie os streams com Premium', subtitle: 'Sua assinatura dá acesso instantâneo aos addons da comunidade.', button: 'Seja Premium', active: 'Premium ativo', not_found: 'Ainda não encontramos streams — tente novamente em instantes.', app_title: 'Assista no app Yammbo Tv', app_sub_premium: 'Sua assinatura vale lá também — no app o conteúdo reproduz normalmente.', app_sub_free: 'Instale o app e experimente 7 dias grátis.', app_mobile: 'Baixar para Android', app_tv: 'Baixar para TV' },
-    fr: { title: 'Débloquez les streams avec Premium', subtitle: 'Votre abonnement donne accès aux addons de la communauté.', button: 'Passer Premium', active: 'Premium actif', not_found: 'Aucun stream pour le moment — réessayez dans un instant.', app_title: 'Regardez-le dans l\'application Yammbo Tv', app_sub_premium: 'Votre abonnement fonctionne aussi — la lecture marche dans l\'app.', app_sub_free: 'Installez l\'app et essayez 7 jours gratuits.', app_mobile: 'Télécharger pour Android', app_tv: 'Télécharger pour TV' },
+    en: { not_found: 'No streams found yet — try again in a moment.', app_title: 'Watch it in the Yammbo Tv app', app_sub: 'Same account and progress on Android and TV.', app_mobile: 'Get it for Android', app_tv: 'Get it for TV' },
+    es: { not_found: 'Aún no encontramos streams — inténtalo en un momento.', app_title: 'Míralo en la app de Yammbo Tv', app_sub: 'Con tu misma cuenta y tu progreso, en Android y en la TV.', app_mobile: 'Descargar para Android', app_tv: 'Descargar para TV' },
+    pt: { not_found: 'Ainda não encontramos streams — tente novamente em instantes.', app_title: 'Assista no app Yammbo Tv', app_sub: 'Com a mesma conta e o seu progresso, no Android e na TV.', app_mobile: 'Baixar para Android', app_tv: 'Baixar para TV' },
+    fr: { not_found: 'Aucun stream pour le moment — réessayez dans un instant.', app_title: 'Regardez-le dans l\'application Yammbo Tv', app_sub: 'Même compte et même progression, sur Android et sur la TV.', app_mobile: 'Télécharger pour Android', app_tv: 'Télécharger pour TV' },
 };
 
 // Yammbo TV: estilos del bloque "Miralo en la app"
@@ -52,10 +52,6 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
         streamsContainerRef.current.scrollTo({ top: 0, left: 0, behavior: platform.name === 'ios' ? 'smooth' : 'instant' });
         setSelectedAddon(value);
     }, [platform]);
-    // Yammbo TV: reemplazamos el CTA "Install addons" por "Hazte Premium" cuando no
-    // hay suscripción. Los usuarios premium tienen el addon AIOStreams auto-instalado.
-    const yamboUser = useYamboUser();
-    const yamboPremium = !!(yamboUser && yamboUser.subscription_active);
     const yamboLocaleShort = (() => {
         const raw = (i18n && i18n.language) ? i18n.language : 'en';
         return String(raw).split('-')[0].toLowerCase();
@@ -145,7 +141,7 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
         <div style={yamboAppStyles.wrap}>
             <div style={yamboAppStyles.title}>{yamboL.app_title}</div>
             <div style={yamboAppStyles.subtitle}>
-                {yamboPremium ? yamboL.app_sub_premium : yamboL.app_sub_free}
+                {yamboL.app_sub}
             </div>
             <div style={yamboAppStyles.row}>
                 <a href={'https://tv.yammbo.com/install'} target={'_blank'} rel={'noopener noreferrer'} style={yamboAppStyles.btnPrimary}>
@@ -208,18 +204,6 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
                                 video?.upcoming ?
                                     <div className={styles['label']}>{t('UPCOMING')}...</div>
                                     : null
-                            }
-                            {
-                                !yamboPremium ?
-                                    <div style={yamboCtaStyles.wrap}>
-                                        <div style={yamboCtaStyles.title}>{yamboL.title}</div>
-                                        <div style={yamboCtaStyles.subtitle}>{yamboL.subtitle}</div>
-                                        <a href={'/pricing'} style={yamboCtaStyles.button}>{yamboL.button}</a>
-                                    </div>
-                                    :
-                                    <div style={yamboCtaStyles.wrapQuiet}>
-                                        <div style={yamboCtaStyles.activePill}>★ {yamboL.active}</div>
-                                    </div>
                             }
                         </div>
                         :
@@ -298,16 +282,6 @@ StreamsList.propTypes = {
     video: PropTypes.object,
     type: PropTypes.string,
     onEpisodeSearch: PropTypes.func
-};
-
-const yamboCtaStyles = {
-    wrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '24px 20px', background: '#0a0a0a', border: '1px solid rgba(229,9,20,0.35)', borderRadius: 12, margin: '16px 0', textAlign: 'center' },
-    wrapQuiet: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '14px', textAlign: 'center' },
-    title: { fontSize: 17, fontWeight: 700, color: '#fff' },
-    subtitle: { fontSize: 13, color: '#bdbdbd', maxWidth: 340, lineHeight: 1.45 },
-    button: { background: '#E50914', color: '#fff', padding: '10px 22px', borderRadius: 999, fontSize: 14, fontWeight: 700, textDecoration: 'none', marginTop: 4 },
-    activePill: { background: 'rgba(229,9,20,0.15)', color: '#E50914', padding: '4px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700 },
-    quietLine: { color: '#888', fontSize: 13 },
 };
 
 module.exports = StreamsList;

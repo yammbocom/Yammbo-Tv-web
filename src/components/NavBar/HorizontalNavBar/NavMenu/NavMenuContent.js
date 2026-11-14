@@ -25,19 +25,6 @@ const YAMBO_INSTALL_LABELS = {
     fr: { label: 'Installer l\'app', title: 'Installer Yammbo Tv sur cet appareil' },
 };
 
-const YAMBO_PREMIUM_LABELS = {
-    en: { upgrade: 'Go Premium', active: 'Premium active', title_upgrade: 'Unlock all streams', title_active: 'Manage subscription' },
-    es: { upgrade: 'Hazte Premium', active: 'Premium activo', title_upgrade: 'Desbloquea todos los streams', title_active: 'Gestionar suscripción' },
-    pt: { upgrade: 'Seja Premium', active: 'Premium ativo', title_upgrade: 'Desbloqueie todos os streams', title_active: 'Gerenciar assinatura' },
-    fr: { upgrade: 'Passer Premium', active: 'Premium actif', title_upgrade: 'Débloquez tous les streams', title_active: 'Gérer l\'abonnement' },
-};
-
-const useYamboPremiumLabels = (i18n) => {
-    const raw = (i18n && i18n.language) ? i18n.language : 'en';
-    const short = String(raw).split('-')[0].toLowerCase();
-    return YAMBO_PREMIUM_LABELS[short] || YAMBO_PREMIUM_LABELS.en;
-};
-
 const useYamboInstallLabels = (i18n) => {
     const raw = (i18n && i18n.language) ? i18n.language : 'en';
     const short = String(raw).split('-')[0].toLowerCase();
@@ -49,8 +36,6 @@ const NavMenuContent = ({ onClick }) => {
     const { core } = useServices();
     const profile = useProfile();
     const yamboUser = useYamboUser();
-    const yamboPremium = !!(yamboUser && yamboUser.subscription_active);
-    const yamboL = useYamboPremiumLabels(i18n);
     const yamboInstallL = useYamboInstallLabels(i18n);
     const { canInstall: yamboCanInstall, promptInstall: yamboPromptInstall } = useInstallPrompt();
     const streamingServer = useStreamingServer();
@@ -119,18 +104,6 @@ const NavMenuContent = ({ onClick }) => {
             {
                 yamboUser ?
                     <div className={styles['nav-menu-section']}>
-                        <Button
-                            className={styles['nav-menu-option-container']}
-                            title={yamboPremium ? yamboL.title_active : yamboL.title_upgrade}
-                            href={yamboPremium ? '/mi-suscripcion' : '/pricing'}
-                            target={'_self'}>
-                            <span style={{ color: '#E50914', display: 'inline-flex', alignItems: 'center' }}>
-                                <Icon className={styles['icon']} name={yamboPremium ? 'checkmark' : 'star'} />
-                            </span>
-                            <div className={styles['nav-menu-option-label']}>
-                                {yamboPremium ? yamboL.active : yamboL.upgrade}
-                            </div>
-                        </Button>
                         {
                             /*
                              * Yammbo TV: la web ya reproduce, así que donde el
