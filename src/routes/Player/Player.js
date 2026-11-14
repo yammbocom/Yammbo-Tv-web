@@ -864,9 +864,8 @@ const Player = ({ urlParams, queryParams }) => {
                     // servidores son HLS directo, sin iframes de terceros).
                     <iframe
                         key={yammboEmbedUrl}
-                        className={styles['layer']}
+                        className={classnames(styles['layer'], styles['embed-layer'])}
                         src={yammboEmbedUrl}
-                        style={{ border: 'none', width: '100%', height: '100%' }}
                         sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                         allowFullScreen
                         allow="autoplay; encrypted-media; fullscreen; picture-in-picture"

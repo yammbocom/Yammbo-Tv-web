@@ -92,8 +92,24 @@ html:not(.active-slider-within) {
             transform: translateY(-50%);
         }
 
+        // Yammbo: el embed (iframe ajeno) pinta sus controles pegados al borde;
+        // sin insets la barra de inicio del iPhone (y la isla en horizontal)
+        // los tapa. Un iframe es elemento reemplazado: necesita alto explícito.
+        &.embed-layer {
+            top: var(--safe-area-inset-top);
+            right: var(--safe-area-inset-right);
+            bottom: var(--safe-area-inset-bottom);
+            left: var(--safe-area-inset-left);
+            width: calc(100% - var(--safe-area-inset-left) - var(--safe-area-inset-right));
+            height: calc(100% - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
+            border: none;
+        }
+
         &.control-bar-layer {
             top: initial;
+            right: var(--safe-area-inset-right);
+            bottom: var(--safe-area-inset-bottom);
+            left: var(--safe-area-inset-left);
             overflow: visible;
 
             &::before {
@@ -111,15 +127,15 @@ html:not(.active-slider-within) {
             top: initial;
             left: 0;
             right: 0;
-            bottom: 10rem;
+            bottom: calc(10rem + var(--safe-area-inset-bottom));
         }
 
         &.menu-layer {
             top: initial;
             left: initial;
             right: 4rem;
-            bottom: 8rem;
-            max-height: calc(100% - 13.5rem);
+            bottom: calc(8rem + var(--safe-area-inset-bottom));
+            max-height: calc(100% - 13.5rem - var(--safe-area-inset-bottom));
             max-width: calc(100% - 4rem);
             border-radius: var(--border-radius);
             background-color: var(--modal-background-color);
@@ -151,7 +167,7 @@ html:not(.active-slider-within) {
         .layer {
             &.menu-layer {
                 right: 2.5rem;
-                bottom: 11rem;
+                bottom: calc(11rem + var(--safe-area-inset-bottom));
             }
         }
     }
