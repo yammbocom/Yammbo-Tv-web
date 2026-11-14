@@ -15,7 +15,7 @@ const useTorrent = require('stremio/common/useTorrent');
 const { withCoreSuspender } = require('stremio/common/CoreSuspender');
 const useStreamingServer = require('stremio/common/useStreamingServer');
 const useYamboUser = require('stremio/common/useYamboUser');
-const { usePlatform } = require('stremio/common/Platform');
+const yamboIsIOS = require('stremio/common/yamboIsIOS');
 const styles = require('./styles');
 
 const YAMBO_INSTALL_LABELS = {
@@ -53,8 +53,7 @@ const NavMenuContent = ({ onClick }) => {
     const yamboL = useYamboPremiumLabels(i18n);
     const yamboInstallL = useYamboInstallLabels(i18n);
     const { canInstall: yamboCanInstall, promptInstall: yamboPromptInstall } = useInstallPrompt();
-    const platform = usePlatform();
-    const yamboInstallHref = platform.name === 'ios' ? 'https://tv.yammbo.com/install/ios' : 'https://tv.yammbo.com/install';
+    const yamboInstallHref = yamboIsIOS() ? 'https://tv.yammbo.com/install/ios' : 'https://tv.yammbo.com/install';
     const streamingServer = useStreamingServer();
     const { createTorrentFromMagnet } = useTorrent();
     const [fullscreen, requestFullscreen, exitFullscreen] = useFullscreen();

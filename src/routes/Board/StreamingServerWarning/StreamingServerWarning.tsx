@@ -6,7 +6,7 @@ import classnames from 'classnames';
 import { useServices } from 'stremio/services';
 import { Button } from 'stremio/components';
 import useProfile from 'stremio/common/useProfile';
-import { usePlatform } from 'stremio/common/Platform';
+import yamboIsIOS from 'stremio/common/yamboIsIOS';
 import { withCoreSuspender } from 'stremio/common/CoreSuspender';
 import styles from './StreamingServerWarning.less';
 
@@ -18,7 +18,6 @@ const StreamingServerWarning = ({ className }: Props) => {
     const { i18n } = useTranslation();
     const { core } = useServices();
     const profile = useProfile();
-    const platform = usePlatform();
 
     // Yammbo Tv: localized copy without relying on the i18n bundle. The web
     // plays everything now, so this is only a suggestion to also install the
@@ -29,7 +28,7 @@ const StreamingServerWarning = ({ className }: Props) => {
     const isEs = lang.indexOf('es') === 0;
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
     const isAndroid = /Android/i.test(ua);
-    const isIOS = platform.name === 'ios';
+    const isIOS = yamboIsIOS();
     const isStandalone = typeof window !== 'undefined' && (
         (window.navigator as Navigator & { standalone?: boolean }).standalone === true ||
         (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches));
