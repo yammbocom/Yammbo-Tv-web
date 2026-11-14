@@ -53,11 +53,12 @@ const NavMenuContent = ({ onClick }) => {
     const yamboL = useYamboPremiumLabels(i18n);
     const yamboInstallL = useYamboInstallLabels(i18n);
     const { canInstall: yamboCanInstall, promptInstall: yamboPromptInstall } = useInstallPrompt();
-    const yamboInstallHref = yamboIsIOS() ? 'https://tv.yammbo.com/install/ios' : 'https://tv.yammbo.com/install';
     const streamingServer = useStreamingServer();
     const { createTorrentFromMagnet } = useTorrent();
     const [fullscreen, requestFullscreen, exitFullscreen] = useFullscreen();
     const [isIOSPWA, isAndroidPWA] = usePWA();
+    // Ya instalada en iPhone/iPad, la guía no aporta nada: /install (TV y otros).
+    const yamboInstallHref = yamboIsIOS() && !isIOSPWA ? 'https://tv.yammbo.com/install/ios' : 'https://tv.yammbo.com/install';
     const streamingServerWarningDismissed = React.useMemo(() => {
         return streamingServer.settings !== null && streamingServer.settings.type === 'Ready' || (
             !isNaN(profile.settings.streamingServerWarningDismissed.getTime()) &&
