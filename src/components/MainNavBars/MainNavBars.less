@@ -38,15 +38,28 @@
     }
 }
 
+// Yammbo: --home-indicator-pad (App/styles.less) = hueco para la raya de inicio.
+@home-indicator-pad: var(--home-indicator-pad);
+
 @media only screen and (max-width: @minimum) {
     .main-nav-bars-container {
         .nav-content-container {
             left: 0;
-            bottom: var(--vertical-nav-bar-size);
+            bottom: calc(var(--vertical-nav-bar-size) + @home-indicator-pad);
         }
 
         .vertical-nav-bar {
             top: initial;
+            height: calc(var(--vertical-nav-bar-size) + @home-indicator-pad);
+            padding-bottom: @home-indicator-pad;
         }
+    }
+
+    // Las secciones restan el margen inferior a su contenedor (Board, Discover,
+    // TV…); en móvil eso dejaba la barra flotando por encima del borde. Aquí el
+    // hueco lo lleva la propia barra y el contenedor llega hasta abajo. `html`
+    // sube la especificidad por encima de la clase de cada sección.
+    html .main-nav-bars-container {
+        height: 100%;
     }
 }

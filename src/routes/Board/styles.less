@@ -217,8 +217,14 @@
         }
         
         .board-warning-container {
-            bottom: calc(var(--vertical-nav-bar-size) + 0.5rem);
+            bottom: calc(var(--vertical-nav-bar-size) + var(--home-indicator-pad) + 0.5rem);
         }
+    }
+
+    // Yammbo: en móvil la barra de abajo lleva su propio hueco para la raya de
+    // inicio (MainNavBars); restarlo también aquí la dejaba flotando.
+    .board-container {
+        height: 100%;
     }
 }
 

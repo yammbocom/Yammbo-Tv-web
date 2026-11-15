@@ -958,12 +958,14 @@ const Player = ({ urlParams, queryParams }) => {
                 />
             </ContextMenu>
             {
-                !yammboNoVideo ?
+                // Con embed la barra va fija encima del iframe (styles: embed-nav-bar-layer):
+                // sin ella, en la app instalada del iPhone no había botón para volver.
+                !yammboNoVideo || (yammboEmbedUrl && yammboPremium) ?
                     <HorizontalNavBar
-                        className={classnames(styles['layer'], styles['nav-bar-layer'])}
+                        className={classnames(styles['layer'], styles['nav-bar-layer'], { [styles['embed-nav-bar-layer']]: !!yammboEmbedUrl })}
                         title={player.title !== null ? player.title : ''}
                         backButton={true}
-                        fullscreenButton={true}
+                        fullscreenButton={!yammboEmbedUrl}
                         onMouseMove={onBarMouseMove}
                         onMouseOver={onBarMouseMove}
                     />

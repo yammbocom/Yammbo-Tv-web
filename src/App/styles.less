@@ -132,6 +132,11 @@
     @media (display-mode: standalone) {
         --safe-area-inset-bottom: @calculated-bottom-safe-inset;
     }
+
+    // Yammbo: hueco bajo la barra de abajo del móvil para la raya de inicio del
+    // iPhone. Los botones ya dejan ~16 px (1.15rem) bajo el texto; solo se añade
+    // lo que falte hasta el margen inferior, como en una app nativa.
+    --home-indicator-pad: max(0rem, calc(var(--safe-area-inset-bottom) - 1.15rem));
 }
 
 * {
