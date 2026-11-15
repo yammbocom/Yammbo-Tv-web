@@ -2,9 +2,11 @@
 
 @import (reference) '~stremio/common/screen-sizes.less';
 
+// Misma altura que Inicio, Descubrir, Buscar…: sin restar el margen inferior
+// del iPhone, la barra de abajo bajaba unos píxeles al entrar en TV en vivo.
 .live-tv-container {
     width: 100%;
-    height: 100%;
+    height: calc(100% - var(--safe-area-inset-bottom));
 }
 
 .live-tv-content {

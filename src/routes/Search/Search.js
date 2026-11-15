@@ -17,6 +17,8 @@ const THRESHOLD = 100;
 // Yammbo TV: cada categoría de canales responde a la búsqueda y repetía los
 // mismos canales en 9 filas. Queda solo "Todos los canales".
 const isHiddenCatalog = (catalog) => catalog.addon?.manifest?.id === YAMBO_IPTV_ID && catalog.id !== 'iptv-all';
+// Fila que respondió sin resultados: no se pinta.
+const isEmptyCatalog = (catalog) => catalog.content?.type === 'Err' && catalog.content.content === 'EmptyContent';
 
 const Search = ({ queryParams }) => {
     const t = useTranslate();
@@ -34,11 +36,13 @@ const Search = ({ queryParams }) => {
             null;
     }, [search.selected]);
     const scrollContainerRef = React.useRef();
-    // Las filas ocultas no están en el DOM: el rango visible se cuenta en filas
-    // pintadas y hay que traducirlo a índices de catálogo antes de pedirlo.
+    // Las filas ocultas y las vacías no están en el DOM: el rango visible se
+    // cuenta en filas pintadas y hay que traducirlo a índices de catálogo antes
+    // de pedirlo. Contando las vacías, la fila de canales tras dos filas vacías
+    // nunca se pedía y se quedaba en esqueleto.
     const shownIndexes = React.useMemo(() => {
         return search.catalogs.reduce((indexes, catalog, index) => {
-            if (!isHiddenCatalog(catalog)) {
+            if (!isHiddenCatalog(catalog) && !isEmptyCatalog(catalog)) {
                 indexes.push(index);
             }
             return indexes;
@@ -59,6 +63,12 @@ const Search = ({ queryParams }) => {
             end: shownIndexes[Math.min(range.end, shownIndexes.length - 1)]
         });
     }, [search.catalogs, shownIndexes]);
+    // Yammbo TV: las filas vacías no se pintan; si todas vuelven vacías la
+    // pantalla quedaba en negro y parecía que la búsqueda no había funcionado.
+    const noResults = React.useMemo(() => {
+        const shown = search.catalogs.filter((catalog) => !isHiddenCatalog(catalog));
+        return shown.length > 0 && shown.every(isEmptyCatalog);
+    }, [search.catalogs]);
     const onScroll = React.useCallback(debounce(onVisibleRangeChange, 250), [onVisibleRangeChange]);
     React.useLayoutEffect(() => {
         onVisibleRangeChange();
@@ -102,46 +112,49 @@ const Search = ({ queryParams }) => {
                                 <div className={styles['message-label']}>{ t.string('STREMIO_TV_SEARCH_NO_ADDONS') }</div>
                             </div>
                             :
-                            search.catalogs.map((catalog, index) => {
-                                if (isHiddenCatalog(catalog)) {
-                                    return null;
-                                }
-                                switch (catalog.content?.type) {
-                                    case 'Ready': {
-                                        return (
-                                            <MetaRow
-                                                key={index}
-                                                className={classnames(styles['search-row'], styles[`search-row-${catalog.content.content[0].posterShape}`], 'animation-fade-in')}
-                                                catalog={catalog}
-                                                itemComponent={MetaItem}
-                                            />
-                                        );
+                            noResults ?
+                                <div className={classnames(styles['no-results'], 'animation-fade-in')}>{ t.string('SEARCH_NO_RESULTS') }</div>
+                                :
+                                search.catalogs.map((catalog, index) => {
+                                    if (isHiddenCatalog(catalog)) {
+                                        return null;
                                     }
-                                    case 'Err': {
-                                        if (catalog.content.content !== 'EmptyContent') {
+                                    switch (catalog.content?.type) {
+                                        case 'Ready': {
                                             return (
                                                 <MetaRow
                                                     key={index}
-                                                    className={classnames(styles['search-row'], 'animation-fade-in')}
+                                                    className={classnames(styles['search-row'], styles[`search-row-${catalog.content.content[0].posterShape}`], 'animation-fade-in')}
                                                     catalog={catalog}
-                                                    message={catalog.content.content}
+                                                    itemComponent={MetaItem}
                                                 />
                                             );
                                         }
-                                        return null;
+                                        case 'Err': {
+                                            if (catalog.content.content !== 'EmptyContent') {
+                                                return (
+                                                    <MetaRow
+                                                        key={index}
+                                                        className={classnames(styles['search-row'], 'animation-fade-in')}
+                                                        catalog={catalog}
+                                                        message={catalog.content.content}
+                                                    />
+                                                );
+                                            }
+                                            return null;
+                                        }
+                                        default: {
+                                            return (
+                                                <MetaRow.Placeholder
+                                                    key={index}
+                                                    className={classnames(styles['search-row'], styles['search-row-poster'], 'animation-fade-in')}
+                                                    catalog={catalog}
+                                                    title={t.catalogTitle(catalog)}
+                                                />
+                                            );
+                                        }
                                     }
-                                    default: {
-                                        return (
-                                            <MetaRow.Placeholder
-                                                key={index}
-                                                className={classnames(styles['search-row'], styles['search-row-poster'], 'animation-fade-in')}
-                                                catalog={catalog}
-                                                title={t.catalogTitle(catalog)}
-                                            />
-                                        );
-                                    }
-                                }
-                            })
+                                })
                 }
             </div>
         </MainNavBars>

@@ -4,6 +4,9 @@
 const React = require('react');
 const { useTranslation } = require('react-i18next');
 const { MainNavBars, Image } = require('stremio/components');
+// Solo por .library-container: la misma altura que las demás secciones (sin ella
+// la barra de abajo bajaba en el iPhone al entrar en la biblioteca).
+const styles = require('./styles');
 
 const T = {
     en: {
@@ -125,7 +128,7 @@ const YamboLibrary = () => {
     const s = mobile ? stylesMobile : stylesDesktop;
 
     return (
-        <MainNavBars route={'library'}>
+        <MainNavBars className={styles['library-container']} route={'library'}>
             <div style={s.scroll}>
                 <div style={s.container}>
                     <div style={s.header}>
