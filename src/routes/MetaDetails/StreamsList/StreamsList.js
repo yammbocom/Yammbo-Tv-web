@@ -9,7 +9,7 @@ const { useServices } = require('stremio/services');
 const { Button, MultiselectMenu } = require('stremio/components');
 const Stream = require('./Stream');
 const styles = require('./styles');
-const { usePlatform, useProfile } = require('stremio/common');
+const { usePlatform, useProfile, useYamboUser } = require('stremio/common');
 const { default: SeasonEpisodePicker } = require('../EpisodePicker');
 
 const ALL_ADDONS_KEY = 'ALL';
@@ -20,6 +20,14 @@ const YAMBO_STREAM_CTA = {
     es: { not_found: 'Aún no encontramos streams — inténtalo en un momento.', app_title: 'Míralo en la app de Yammbo Tv', app_sub: 'Con tu misma cuenta y tu progreso, en Android y en la TV.', app_mobile: 'Descargar para Android', app_tv: 'Descargar para TV' },
     pt: { not_found: 'Ainda não encontramos streams — tente novamente em instantes.', app_title: 'Assista no app Yammbo Tv', app_sub: 'Com a mesma conta e o seu progresso, no Android e na TV.', app_mobile: 'Baixar para Android', app_tv: 'Baixar para TV' },
     fr: { not_found: 'Aucun stream pour le moment — réessayez dans un instant.', app_title: 'Regardez-le dans l\'application Yammbo Tv', app_sub: 'Même compte et même progression, sur Android et sur la TV.', app_mobile: 'Télécharger pour Android', app_tv: 'Télécharger pour TV' },
+};
+
+// Yammbo TV: aviso que sustituye a "Ver ahora" cuando la cuenta no es Premium
+const YAMBO_PAYWALL = {
+    en: { title: 'Go Premium to watch', sub: 'Activate your subscription and watch the whole catalog on the web, mobile and TV.', button: 'Activate subscription' },
+    es: { title: 'Hazte Premium para verlo', sub: 'Activa tu suscripción y mira todo el catálogo en la web, el móvil y la TV.', button: 'Activar suscripción' },
+    pt: { title: 'Seja Premium para assistir', sub: 'Ative sua assinatura e assista a todo o catálogo na web, no celular e na TV.', button: 'Ativar assinatura' },
+    fr: { title: 'Passez Premium pour regarder', sub: 'Activez votre abonnement et regardez tout le catalogue sur le web, le mobile et la TV.', button: 'Activer l\'abonnement' },
 };
 
 // Yammbo TV: estilos del bloque "Miralo en la app"
@@ -46,6 +54,7 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
     const { core } = useServices();
     const platform = usePlatform();
     const profile = useProfile();
+    const yamboUser = useYamboUser();
     const streamsContainerRef = React.useRef(null);
     const [selectedAddon, setSelectedAddon] = React.useState(ALL_ADDONS_KEY);
     const onAddonSelected = React.useCallback((value) => {
@@ -58,6 +67,7 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
     })();
     const yamboL = YAMBO_STREAM_CTA[yamboLocaleShort] || YAMBO_STREAM_CTA.en;
     const yamboCta = YAMBO_APP_CTA[yamboLocaleShort] || YAMBO_APP_CTA.en;
+    const yamboPaywall = YAMBO_PAYWALL[yamboLocaleShort] || YAMBO_PAYWALL.en;
     const showInstallAddonsButton = React.useMemo(() => {
         // Yammbo TV: en TV en vivo no se ofrece instalar addons
         if (type === 'tv') return false;
@@ -156,6 +166,43 @@ const StreamsList = ({ className, video, type, onEpisodeSearch, ...props }) => {
     const yamboShowingStreams = props.streams.length > 0 &&
         !props.streams.every((streams) => streams.content.type === 'Err') &&
         filteredStreams.length > 0;
+
+    // Yammbo TV: solo Premium reproduce. Los demas ven un aviso en lugar de la
+    // lista de streams / "Ver ahora"; "Miralo en la app" sigue debajo.
+    // Live TV (type 'tv') stays open to everyone, as LiveTv.js plays it directly.
+    if (type !== 'tv' && !(yamboUser && yamboUser.subscription_active)) {
+        return (
+            <div className={classnames(className, styles['streams-list-container'])}>
+                <div className={styles['select-choices-wrapper']}>
+                    {
+                        video ?
+                            <React.Fragment>
+                                <Button className={classnames(styles['button-container'], styles['back-button-container'])} tabIndex={-1} onClick={backButtonOnClick}>
+                                    <Icon className={styles['icon']} name={'chevron-back'} />
+                                </Button>
+                                <div className={styles['episode-title']}>
+                                    {`S${video?.season}E${video?.episode} ${(video?.title)}`}
+                                </div>
+                            </React.Fragment>
+                            :
+                            null
+                    }
+                </div>
+                <div className={styles['streams-container']}>
+                    <div style={yamboAppStyles.wrap}>
+                        <div style={yamboAppStyles.title}>{yamboPaywall.title}</div>
+                        <div style={yamboAppStyles.subtitle}>{yamboPaywall.sub}</div>
+                        <div style={yamboAppStyles.row}>
+                            <a href={'/pricing'} style={{ ...yamboAppStyles.btnPrimary, background: '#1160d8' }}>
+                                {yamboPaywall.button}
+                            </a>
+                        </div>
+                    </div>
+                    {yamboAppCta}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={classnames(className, styles['streams-list-container'])}>

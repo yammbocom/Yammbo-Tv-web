@@ -40,13 +40,14 @@ const { YAMBO_PREMIUM_ID, YAMBO_CATALOG_ID, YAMBO_IPTV_ID } = require('stremio/c
 require('stremio/common/yamboHistory');
 
 /*
- * Yammbo TV: el addon de streams (AIOStreams) esta DESACTIVADO.
- * Sin un servicio debrid configurado solo devolvia listas vacias, asi que la
- * web no puede reproducir. En vez de hacer esperar al usuario para acabar en
- * "no se encontraron transmisiones", no lo instalamos y ofrecemos las apps.
- * Para reactivarlo: poner esto a true (y configurar debrid en AIOStreams).
+ * Yammbo TV: el addon premium (com.yammbo.premium) es el que da los streams
+ * "Ver ahora" a los usuarios Premium. Su URL es tokenizada
+ * por cuenta (/api/app-tv/addon-url) y la sirve el backend en /yp/{token}/.
+ * Se instala si subscription_active y se desinstala si no. Los demas
+ * ven catalogo, fichas y trailer, pero no reproducen.
+ * Para apagarlo del todo: poner esto a false.
  */
-const YAMBO_AIO_ENABLED = false;
+const YAMBO_AIO_ENABLED = true;
 
 const YAMBO_CATALOG_URL = (typeof window !== 'undefined' ? window.location.origin : '') + '/manifest.json';
 const YAMBO_IPTV_URL = (typeof window !== 'undefined' ? window.location.origin : '') + '/iptv/manifest.json';

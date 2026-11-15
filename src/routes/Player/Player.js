@@ -8,7 +8,7 @@ const langs = require('langs');
 const { useTranslation } = require('react-i18next');
 const { useRouteFocused } = require('stremio-router');
 const { useServices } = require('stremio/services');
-const { onFileDrop, useSettings, useProfile, useFullscreen, useBinaryState, useToast, useStreamingServer, withCoreSuspender, CONSTANTS, useShell, usePlatform, onShortcut } = require('stremio/common');
+const { onFileDrop, useSettings, useProfile, useFullscreen, useBinaryState, useToast, useStreamingServer, withCoreSuspender, CONSTANTS, useShell, usePlatform, onShortcut, useYamboUser } = require('stremio/common');
 const { HorizontalNavBar, Transition, ContextMenu } = require('stremio/components');
 const BufferingLoader = require('./BufferingLoader');
 const VolumeChangeIndicator = require('./VolumeChangeIndicator');
@@ -32,17 +32,26 @@ const { default: Indicator } = require('./Indicator/Indicator');
 // Yammbo TV: hosters cuyas páginas embed devuelve el backend (ComxService::streams).
 const YAMMBO_EMBED_HOSTS = ['api.moviemaster.lat'];
 
+// Yammbo TV: aviso que sustituye al iframe de reproduccion si la cuenta no es Premium.
+const YAMMBO_PAYWALL = {
+    en: { title: 'Go Premium to watch', sub: 'Activate your subscription and watch the whole catalog on the web, mobile and TV.', button: 'Activate subscription', back: 'Back' },
+    es: { title: 'Hazte Premium para verlo', sub: 'Activa tu suscripción y mira todo el catálogo en la web, el móvil y la TV.', button: 'Activar suscripción', back: 'Volver' },
+    pt: { title: 'Seja Premium para assistir', sub: 'Ative sua assinatura e assista a todo o catálogo na web, no celular e na TV.', button: 'Ativar assinatura', back: 'Voltar' },
+    fr: { title: 'Passez Premium pour regarder', sub: 'Activez votre abonnement et regardez tout le catalogue sur le web, le mobile et la TV.', button: 'Activer l\'abonnement', back: 'Retour' },
+};
+
 const findTrackByLang = (tracks, lang) => tracks.find((track) => track.lang === lang || langs.where('1', track.lang)?.[2] === lang);
 const findTrackById = (tracks, id) => tracks.find((track) => track.id === id);
 
 const Player = ({ urlParams, queryParams }) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const services = useServices();
     const shell = useShell();
     const forceTranscoding = React.useMemo(() => {
         return queryParams.has('forceTranscoding');
     }, [queryParams]);
     const profile = useProfile();
+    const yamboUser = useYamboUser();
     const [player, videoParamsChanged, streamStateChanged, timeChanged, seek, pausedChanged, ended, nextVideo] = usePlayer(urlParams);
     // Yammbo TV: los streams CO-MX llevan la página embed en `url` (nunca vídeo
     // directo: el hoster sólo acepta IP residencial, no la del VPS) y se montan
@@ -73,6 +82,8 @@ const Player = ({ urlParams, queryParams }) => {
             return null;
         }
     })();
+    const yammboPremium = !!(yamboUser && yamboUser.subscription_active);
+    const yammboPaywall = YAMMBO_PAYWALL[String((i18n && i18n.language) || 'en').split('-')[0].toLowerCase()] || YAMMBO_PAYWALL.en;
     const [settings] = useSettings();
     const streamingServer = useStreamingServer();
     const statistics = useStatistics(player, streamingServer);
@@ -855,6 +866,17 @@ const Player = ({ urlParams, queryParams }) => {
             onMouseOver={onContainerMouseMove}
             onMouseLeave={onContainerMouseLeave}>
             {
+                yammboEmbedUrl && !yammboPremium ?
+                    <div className={classnames(styles['layer'], styles['paywall-layer'])}>
+                        <div className={styles['paywall-title']}>{yammboPaywall.title}</div>
+                        <div className={styles['paywall-sub']}>{yammboPaywall.sub}</div>
+                        <a className={styles['paywall-button']} href={'/pricing'}>{yammboPaywall.button}</a>
+                        <a className={styles['paywall-back']} href={'#'} onClick={(event) => { event.preventDefault(); window.history.back(); }}>{yammboPaywall.back}</a>
+                    </div>
+                    :
+                    null
+            }
+            {
                 yammboEmbedUrl ?
                     // Un iframe nuevo por url (key): su primera carga no añade
                     // entrada al historial, así que "atrás" sale del reproductor.
@@ -862,6 +884,7 @@ const Player = ({ urlParams, queryParams }) => {
                     // del hoster abría la web del anunciante en otra pestaña.
                     // moviemaster reproduce igual sin ellos (todos sus
                     // servidores son HLS directo, sin iframes de terceros).
+                    yammboPremium &&
                     <iframe
                         key={yammboEmbedUrl}
                         className={classnames(styles['layer'], styles['embed-layer'])}
