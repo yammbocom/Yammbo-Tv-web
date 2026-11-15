@@ -12,6 +12,8 @@ const classnames = require('classnames');
 const { useTranslation } = require('react-i18next');
 const { default: Icon } = require('@stremio/stremio-icons/react');
 const { MainNavBars, MetaItem } = require('stremio/components');
+const { useYamboUser } = require('stremio/common');
+const { yamboPaywallText } = require('stremio/common/yamboPaywall');
 const { buildLiveChannelPlayerHash } = require('stremio/routes/Player/SideDrawer/liveChannelLink');
 const styles = require('./styles');
 
@@ -72,8 +74,14 @@ const detailHref = (id) => `#/detail/tv/${encodeURIComponent(id)}`;
 // Solo navega la última apertura y solo si el usuario sigue en #/tv: dos toques
 // seguidos no apilan dos reproductores, y cambiar de pestaña mientras carga no
 // le lleva al reproductor desde otra sección.
+// La TV en vivo es solo Premium: sin plan no se pide el stream ni se navega,
+// se avisa con onLocked (el aviso "Hazte Premium" de esta pantalla).
 let openSeq = 0;
-const openChannel = (meta) => {
+const openChannel = (meta, premium, onLocked) => {
+    if (!premium) {
+        onLocked();
+        return;
+    }
     const seq = ++openSeq;
     const startHash = window.location.hash;
     const stillHere = () => seq === openSeq && window.location.hash === startHash;
@@ -110,12 +118,16 @@ const openChannel = (meta) => {
         .catch(fallback);
 };
 
+// Estado premium y aviso, para los canales que están varios niveles por debajo.
+const PaywallContext = React.createContext({ premium: false, onLocked: () => null });
+
 const Channel = React.memo(({ meta, className }) => {
+    const { premium, onLocked } = React.useContext(PaywallContext);
     const deepLinks = React.useMemo(() => ({ metaDetailsStreams: detailHref(meta.id) }), [meta.id]);
     const onClick = React.useCallback((event) => {
         event.preventDefault();
-        openChannel(meta);
-    }, [meta]);
+        openChannel(meta, premium, onLocked);
+    }, [meta, premium, onLocked]);
     return (
         <MetaItem
             className={className}
@@ -255,6 +267,20 @@ const Grid = ({ catalogId, country, search, text, scrollContainerRef }) => {
 const LiveTv = () => {
     const { i18n } = useTranslation();
     const text = T[String(i18n.language || 'es').split('-')[0].toLowerCase()] || T.es;
+    const yamboUser = useYamboUser();
+    const premium = !!(yamboUser && yamboUser.subscription_active);
+    const [paywallOpen, setPaywallOpen] = React.useState(false);
+    const paywall = yamboPaywallText(i18n.language || 'es');
+    const paywallContext = React.useMemo(() => ({ premium, onLocked: () => setPaywallOpen(true) }), [premium]);
+    const closePaywall = React.useCallback(() => setPaywallOpen(false), []);
+    React.useEffect(() => {
+        if (!paywallOpen) {
+            return;
+        }
+        const onKeyDown = (event) => event.key === 'Escape' && setPaywallOpen(false);
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [paywallOpen]);
     const stored = React.useMemo(readStored, []);
     const [category, setCategory] = React.useState(typeof stored.category === 'string' ? stored.category : HOME);
     const [country, setCountry] = React.useState(typeof stored.country === 'string' ? stored.country : '');
@@ -358,49 +384,64 @@ const LiveTv = () => {
 
     return (
         <MainNavBars className={styles['live-tv-container']} route={'livetv'}>
-            <div ref={scrollContainerRef} className={styles['live-tv-content']}>
-                <div className={styles['header']}>
-                    <h1 className={styles['title']}>{text.title}</h1>
-                    <div className={styles['controls']}>
-                        <form className={styles['search']} role={'search'} onSubmit={onQuerySubmit}>
-                            <Icon className={styles['search-icon']} name={'search'} />
-                            <input
-                                className={styles['search-input']}
-                                type={'search'}
-                                enterKeyHint={'search'}
-                                placeholder={text.search}
-                                value={query}
-                                onChange={onQueryChange}
-                            />
-                            {
-                                query.length > 0 ?
-                                    <button type={'button'} className={styles['search-clear']} onClick={clearQuery} aria-label={'×'}>
-                                        <Icon className={styles['search-clear-icon']} name={'close'} />
-                                    </button>
-                                    :
-                                    null
-                            }
-                        </form>
-                        <select className={styles['country']} value={country} onChange={onCountryChange} aria-label={text.allCountries}>
-                            <option value={''}>{text.allCountries}</option>
-                            {countries.top.map((name) => <option key={`top-${name}`} value={name}>{name}</option>)}
-                            {countries.top.length > 0 ? <option disabled>──────────</option> : null}
-                            {countries.rest.map((name) => <option key={name} value={name}>{name}</option>)}
-                        </select>
-                    </div>
-                    <div ref={chipsRef} className={styles['chips']}>
-                        <button className={classnames(styles['chip'], { [styles['selected']]: activeCategory === HOME })} onClick={() => selectCategory(HOME)}>
-                            {text.home}
-                        </button>
-                        {catalogs.map((catalog) => (
-                            <button key={catalog.id} className={classnames(styles['chip'], { [styles['selected']]: activeCategory === catalog.id })} onClick={() => selectCategory(catalog.id)}>
-                                {catalog.name}
+            <PaywallContext.Provider value={paywallContext}>
+                <div ref={scrollContainerRef} className={styles['live-tv-content']}>
+                    <div className={styles['header']}>
+                        <h1 className={styles['title']}>{text.title}</h1>
+                        <div className={styles['controls']}>
+                            <form className={styles['search']} role={'search'} onSubmit={onQuerySubmit}>
+                                <Icon className={styles['search-icon']} name={'search'} />
+                                <input
+                                    className={styles['search-input']}
+                                    type={'search'}
+                                    enterKeyHint={'search'}
+                                    placeholder={text.search}
+                                    value={query}
+                                    onChange={onQueryChange}
+                                />
+                                {
+                                    query.length > 0 ?
+                                        <button type={'button'} className={styles['search-clear']} onClick={clearQuery} aria-label={'×'}>
+                                            <Icon className={styles['search-clear-icon']} name={'close'} />
+                                        </button>
+                                        :
+                                        null
+                                }
+                            </form>
+                            <select className={styles['country']} value={country} onChange={onCountryChange} aria-label={text.allCountries}>
+                                <option value={''}>{text.allCountries}</option>
+                                {countries.top.map((name) => <option key={`top-${name}`} value={name}>{name}</option>)}
+                                {countries.top.length > 0 ? <option disabled>──────────</option> : null}
+                                {countries.rest.map((name) => <option key={name} value={name}>{name}</option>)}
+                            </select>
+                        </div>
+                        <div ref={chipsRef} className={styles['chips']}>
+                            <button className={classnames(styles['chip'], { [styles['selected']]: activeCategory === HOME })} onClick={() => selectCategory(HOME)}>
+                                {text.home}
                             </button>
-                        ))}
+                            {catalogs.map((catalog) => (
+                                <button key={catalog.id} className={classnames(styles['chip'], { [styles['selected']]: activeCategory === catalog.id })} onClick={() => selectCategory(catalog.id)}>
+                                    {catalog.name}
+                                </button>
+                            ))}
+                        </div>
                     </div>
+                    {content}
                 </div>
-                {content}
-            </div>
+            </PaywallContext.Provider>
+            {
+                paywallOpen ?
+                    <div className={styles['paywall-backdrop']} onClick={closePaywall}>
+                        <div className={styles['paywall']} role={'dialog'} onClick={(event) => event.stopPropagation()}>
+                            <div className={styles['paywall-title']}>{paywall.title}</div>
+                            <div className={styles['paywall-sub']}>{paywall.sub}</div>
+                            <a className={styles['paywall-button']} href={'/pricing'}>{paywall.button}</a>
+                            <button className={styles['paywall-close']} onClick={closePaywall}>{paywall.close}</button>
+                        </div>
+                    </div>
+                    :
+                    null
+            }
         </MainNavBars>
     );
 };

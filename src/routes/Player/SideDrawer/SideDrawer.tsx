@@ -5,7 +5,7 @@ import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import Icon from '@stremio/stremio-icons/react';
 import { useServices } from 'stremio/services';
-import { CONSTANTS } from 'stremio/common';
+import { CONSTANTS, useYamboUser } from 'stremio/common';
 import { MetaPreview, Video } from 'stremio/components';
 import SeasonsBar from 'stremio/routes/MetaDetails/VideosList/SeasonsBar';
 import { buildLiveChannelPlayerHash, type LiveChannel, type LiveChannelsRelated } from './liveChannelLink';
@@ -41,6 +41,8 @@ type Props = {
 const SideDrawer = memo(forwardRef<HTMLDivElement, Props>(({ seriesInfo, className, closeSideDrawer, selected, ...props }: Props, ref) => {
     const { core } = useServices();
     const { i18n } = useTranslation();
+    const yamboUser: { subscription_active?: boolean } | null = useYamboUser();
+    const yamboPremium = !!(yamboUser && yamboUser.subscription_active);
     const [season, setSeason] = useState<number>(seriesInfo?.season);
     const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
 
@@ -101,7 +103,8 @@ const SideDrawer = memo(forwardRef<HTMLDivElement, Props>(({ seriesInfo, classNa
     const [related, setRelated] = useState<LiveChannelsRelated | null>(null);
     useEffect(() => {
         setRelated(null);
-        if (typeof liveChannelId !== 'string' || !liveChannelId.startsWith('yiptv:')) {
+        // Live TV is Premium only: free accounts do not get the zapping list
+        if (!yamboPremium || typeof liveChannelId !== 'string' || !liveChannelId.startsWith('yiptv:')) {
             return;
         }
         const controller = new AbortController();
@@ -114,7 +117,7 @@ const SideDrawer = memo(forwardRef<HTMLDivElement, Props>(({ seriesInfo, classNa
             })
             .catch(() => { /* ignore: the list is optional */ });
         return () => controller.abort();
-    }, [liveChannelId]);
+    }, [liveChannelId, yamboPremium]);
     const yamboLocaleShort = String(i18n?.language || 'en').split('-')[0].toLowerCase();
     const moreChannelsLabel = YAMBO_MORE_CHANNELS[yamboLocaleShort] || YAMBO_MORE_CHANNELS.en;
     const similarLabel = YAMBO_SIMILAR[yamboLocaleShort] || YAMBO_SIMILAR.en;

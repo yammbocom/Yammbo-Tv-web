@@ -6,7 +6,8 @@
 const YAMBO_PREMIUM_ID = 'com.yammbo.premium';
 const YAMBO_CATALOG_ID = 'com.yammbo.tv';
 // Canales en vivo (Worker yammbo-iptv en /iptv/*, lista de iptv-org filtrada a
-// lo que el navegador puede reproducir). Gratis para todos.
+// lo que el navegador puede reproducir). El catálogo lo ve todo el mundo;
+// reproducir un canal es solo Premium (LiveTv, ficha y reproductor).
 const YAMBO_IPTV_ID = 'com.yammbo.iptv';
 const YAMBO_MANAGED_IDS = [YAMBO_PREMIUM_ID, YAMBO_CATALOG_ID, YAMBO_IPTV_ID];
 

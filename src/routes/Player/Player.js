@@ -10,6 +10,7 @@ const { useRouteFocused } = require('stremio-router');
 const { useServices } = require('stremio/services');
 const { onFileDrop, useSettings, useProfile, useFullscreen, useBinaryState, useToast, useStreamingServer, withCoreSuspender, CONSTANTS, useShell, usePlatform, onShortcut, useYamboUser } = require('stremio/common');
 const { HorizontalNavBar, Transition, ContextMenu } = require('stremio/components');
+const { yamboPaywallText } = require('stremio/common/yamboPaywall');
 const BufferingLoader = require('./BufferingLoader');
 const VolumeChangeIndicator = require('./VolumeChangeIndicator');
 const Error = require('./Error');
@@ -31,14 +32,6 @@ const { default: Indicator } = require('./Indicator/Indicator');
 
 // Yammbo TV: hosters cuyas páginas embed devuelve el backend (ComxService::streams).
 const YAMMBO_EMBED_HOSTS = ['api.moviemaster.lat'];
-
-// Yammbo TV: aviso que sustituye al iframe de reproduccion si la cuenta no es Premium.
-const YAMMBO_PAYWALL = {
-    en: { title: 'Go Premium to watch', sub: 'Activate your subscription and watch the whole catalog on the web, mobile and TV.', button: 'Activate subscription', back: 'Back' },
-    es: { title: 'Hazte Premium para verlo', sub: 'Activa tu suscripción y mira todo el catálogo en la web, el móvil y la TV.', button: 'Activar suscripción', back: 'Volver' },
-    pt: { title: 'Seja Premium para assistir', sub: 'Ative sua assinatura e assista a todo o catálogo na web, no celular e na TV.', button: 'Ativar assinatura', back: 'Voltar' },
-    fr: { title: 'Passez Premium pour regarder', sub: 'Activez votre abonnement et regardez tout le catalogue sur le web, le mobile et la TV.', button: 'Activer l\'abonnement', back: 'Retour' },
-};
 
 const findTrackByLang = (tracks, lang) => tracks.find((track) => track.lang === lang || langs.where('1', track.lang)?.[2] === lang);
 const findTrackById = (tracks, id) => tracks.find((track) => track.id === id);
@@ -83,7 +76,16 @@ const Player = ({ urlParams, queryParams }) => {
         }
     })();
     const yammboPremium = !!(yamboUser && yamboUser.subscription_active);
-    const yammboPaywall = YAMMBO_PAYWALL[String((i18n && i18n.language) || 'en').split('-')[0].toLowerCase()] || YAMMBO_PAYWALL.en;
+    const yammboPaywall = yamboPaywallText(i18n && i18n.language);
+    // Yammbo TV: la TV en vivo (canales yiptv:..., Worker /iptv/*) es solo Premium.
+    // Se detecta por el id de la ruta #/player/<stream>/<t>/<t>/tv/<id>/<videoId>
+    // (urlParams, ya decodificado y disponible antes de que cargue el core), o por
+    // venir del manifest /iptv/. Los trailers (stream.ytId) nunca se bloquean.
+    const yammboLiveLocked = !yammboPremium && !(player.selected && player.selected.stream && player.selected.stream.ytId) && (
+        [urlParams.id, urlParams.videoId].some((id) => typeof id === 'string' && id.startsWith('yiptv:')) ||
+        [urlParams.streamTransportUrl, urlParams.metaTransportUrl].some((url) => typeof url === 'string' && url.includes('/iptv/manifest.json'))
+    );
+    const yammboNoVideo = !!yammboEmbedUrl || yammboLiveLocked;
     const [settings] = useSettings();
     const streamingServer = useStreamingServer();
     const statistics = useStatistics(player, streamingServer);
@@ -438,7 +440,7 @@ const Player = ({ urlParams, queryParams }) => {
         setError(null);
         video.unload();
 
-        if (!yammboEmbedUrl && player.selected && player.stream?.type === 'Ready' && streamingServer.settings?.type !== 'Loading') {
+        if (!yammboNoVideo && player.selected && player.stream?.type === 'Ready' && streamingServer.settings?.type !== 'Loading') {
             video.load({
                 stream: {
                     ...player.stream.content,
@@ -477,7 +479,7 @@ const Player = ({ urlParams, queryParams }) => {
                 shellTransport: services.shell.active ? services.shell.transport : null,
             });
         }
-    }, [streamingServer.baseUrl, player.selected, player.stream, forceTranscoding, casting, yammboEmbedUrl]);
+    }, [streamingServer.baseUrl, player.selected, player.stream, forceTranscoding, casting, yammboNoVideo]);
     React.useEffect(() => {
         if (video.state.stream !== null) {
             const tracks = player.subtitles.map((subtitles) => ({
@@ -866,7 +868,7 @@ const Player = ({ urlParams, queryParams }) => {
             onMouseOver={onContainerMouseMove}
             onMouseLeave={onContainerMouseLeave}>
             {
-                yammboEmbedUrl && !yammboPremium ?
+                yammboNoVideo && !yammboPremium ?
                     <div className={classnames(styles['layer'], styles['paywall-layer'])}>
                         <div className={styles['paywall-title']}>{yammboPaywall.title}</div>
                         <div className={styles['paywall-sub']}>{yammboPaywall.sub}</div>
@@ -894,6 +896,7 @@ const Player = ({ urlParams, queryParams }) => {
                         allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                     />
                     :
+                    !yammboLiveLocked &&
                     <Video
                         ref={video.containerRef}
                         className={styles['layer']}
@@ -902,7 +905,7 @@ const Player = ({ urlParams, queryParams }) => {
                     />
             }
             {
-                !video.state.loaded && !yammboEmbedUrl ?
+                !video.state.loaded && !yammboNoVideo ?
                     <div className={classnames(styles['layer'], styles['background-layer'])}>
                         <img className={styles['image']} src={player?.metaItem?.content?.background} />
                     </div>
@@ -910,7 +913,7 @@ const Player = ({ urlParams, queryParams }) => {
                     null
             }
             {
-                (video.state.buffering || !video.state.loaded) && !error && !yammboEmbedUrl ?
+                (video.state.buffering || !video.state.loaded) && !error && !yammboNoVideo ?
                     <BufferingLoader
                         ref={bufferingRef}
                         className={classnames(styles['layer'], styles['buffering-layer'])}
@@ -955,7 +958,7 @@ const Player = ({ urlParams, queryParams }) => {
                 />
             </ContextMenu>
             {
-                !yammboEmbedUrl ?
+                !yammboNoVideo ?
                     <HorizontalNavBar
                         className={classnames(styles['layer'], styles['nav-bar-layer'])}
                         title={player.title !== null ? player.title : ''}
@@ -977,7 +980,7 @@ const Player = ({ urlParams, queryParams }) => {
                     null
             }
             {
-                !yammboEmbedUrl ?
+                !yammboNoVideo ?
                     <ControlBar
                         className={classnames(styles['layer'], styles['control-bar-layer'])}
                         paused={video.state.paused}
@@ -1016,7 +1019,7 @@ const Player = ({ urlParams, queryParams }) => {
                     null
             }
             {
-                !yammboEmbedUrl ?
+                !yammboNoVideo ?
                     <Indicator
                         className={classnames(styles['layer'], styles['indicator-layer'])}
                         videoState={video.state}
