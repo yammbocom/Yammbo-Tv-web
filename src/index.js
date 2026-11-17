@@ -7,7 +7,10 @@ if (typeof process.env.SENTRY_DSN === 'string') {
 
 const Bowser = require('bowser');
 const browser = Bowser.parse(window.navigator?.userAgent || '');
-if (browser?.platform?.type === 'desktop') {
+// Yammbo: iPad and iPhone Duo (inner display) may send a Mac user agent. Real Macs
+// report no touch points; clearing the viewport on a touch screen renders at 980px.
+const isTouchMac = /Macintosh/.test(window.navigator?.userAgent || '') && window.navigator?.maxTouchPoints > 1;
+if (browser?.platform?.type === 'desktop' && !isTouchMac) {
     document.querySelector('meta[name="viewport"]')?.setAttribute('content', '');
 }
 

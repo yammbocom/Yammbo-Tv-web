@@ -329,3 +329,17 @@
         }
     }
 }
+
+// Yammbo: no bottom bar on a short landscape screen (see @bottom-nav-bar), so the
+// add button sits at the edge instead of floating over a bar that isn't there.
+@media @narrow-short-landscape {
+    .addons-container {
+        .addons-content {
+            .selectable-inputs-container {
+                .add-button-container {
+                    bottom: calc(1rem + var(--safe-area-inset-bottom));
+                }
+            }
+        }
+    }
+}

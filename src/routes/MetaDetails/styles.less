@@ -154,3 +154,27 @@
         }
     }
 }
+
+// Yammbo: on a short landscape screen (iPhone Duo outer display on its side) the app
+// keeps the side rail, but this page is still a single column: the meta extension
+// tabs stay a row on top, as on any narrow screen.
+@media @narrow-short-landscape {
+    .metadetails-container {
+        .metadetails-content {
+            .vertical-nav-bar {
+                flex-direction: row;
+                justify-content: flex-start;
+                gap: 0;
+                width: 100%;
+                height: var(--vertical-nav-bar-size);
+                padding: 0 1rem;
+                overflow-x: auto;
+                overflow-y: hidden;
+
+                > * {
+                    flex: none;
+                }
+            }
+        }
+    }
+}

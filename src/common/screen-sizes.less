@@ -23,3 +23,10 @@
 @phone-landscape: ~"screen and (max-width: @{phone-portrait-size}) and (max-height: @{phone-landscape-size}) and (orientation: landscape)";
 @phone-portrait: ~"screen and (max-width: @{phone-landscape-size}) and (max-height: @{phone-portrait-size}) and (orientation: portrait)";
 
+// Yammbo: navigation bar at the bottom on narrow screens, except short landscape ones
+// (iPhone Duo outer display on its side: 594x368). There a top bar plus a bottom bar
+// left ~200px of content, so it keeps the side rail like any other phone in landscape.
+@bottom-nav-min-height: (@phone-landscape-size + 1);
+@narrow-short-landscape: ~"screen and (max-width: @{minimum}) and (max-height: @{phone-landscape-size}) and (orientation: landscape)";
+@bottom-nav-bar: ~"screen and (max-width: @{minimum}) and (orientation: portrait), screen and (max-width: @{minimum}) and (min-height: @{bottom-nav-min-height})";
+
